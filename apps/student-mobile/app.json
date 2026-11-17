@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "CampusShield",
+    "slug": "campus-shield",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "org.campusshield.student",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "CampusShield uses your location during active trips to alert campus security if you exit your safe perimeter or trigger SOS.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "CampusShield uses background location to monitor safe return deadlines and perimeters even when your phone is locked.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#020617"
+      },
+      "package": "org.campusshield.student",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
+    }
+  }
+}
