@@ -134,16 +134,16 @@ export default function DashboardPage() {
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md transition-all duration-300"
             style={{
-              backgroundColor: settings.primaryColor || '#0284c7',
+              backgroundColor: settings.primaryColor || '#003B5C',
               boxShadow: `0 0 12px ${settings.primaryColor}50`,
             }}
           >
-            {settings.universityShortName || 'CS'}
+            {settings.universityShortName || 'UCR'}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-bold text-sm tracking-wide text-white leading-none">
-                {settings.universityName || 'CampusShield'}
+                {settings.universityName || 'University of California, Riverside'}
               </h1>
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono uppercase tracking-wider">
                 Console
@@ -262,8 +262,18 @@ export default function DashboardPage() {
           </button>
         </nav>
 
-        {/* Right side: Audit logs, user info & actions */}
+        {/* Right side: Police Hotline, Audit logs, user info & actions */}
         <div className="flex items-center gap-3">
+          {/* Dedicated Campus Police Hotline Button */}
+          <a
+            href={`tel:${settings.campusPolicePhone || '(951) 827-5222'}`}
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-300 transition-colors shadow-sm"
+            title="Direct Dial Campus Police Emergency Line"
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span>Police: {settings.campusPolicePhone || '(951) 827-5222'}</span>
+          </a>
+
           {(currentUser.role === 'ADMIN' || currentUser.role === 'AUDITOR') && (
             <button
               onClick={() => setIsAuditModalOpen(true)}

@@ -39,8 +39,8 @@ export default function GeofenceManager() {
         name,
         category,
         color,
-        centerLat: 40.7128,
-        centerLng: -74.0060,
+        centerLat: 33.9737,
+        centerLng: -117.3281,
         radiusMeters,
         description,
         alertOnExit: false,
@@ -82,7 +82,7 @@ export default function GeofenceManager() {
 
         <button
           onClick={() => setIsAddOpen(true)}
-          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-semibold text-white shadow transition-colors flex items-center gap-1.5"
+          className="px-3.5 py-2 btn-brand-primary rounded-lg text-xs font-semibold shadow flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -223,7 +223,7 @@ export default function GeofenceManager() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow"
+                  className="px-4 py-2 btn-brand-primary font-semibold rounded-lg shadow"
                 >
                   Save Zone
                 </button>

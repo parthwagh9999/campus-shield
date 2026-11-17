@@ -50,7 +50,8 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">CampusShield</h1>
-          <p className="text-sm text-slate-400 mt-1">University Security & Dispatch Console</p>
+          <p className="text-sm font-semibold text-amber-400 mt-1">University of California, Riverside (UCR)</p>
+          <p className="text-xs text-slate-400">Campus Security & Emergency Dispatch Console</p>
           <div className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/60 border border-emerald-500/30 text-emerald-400">
             Privacy-by-Default Identity Escrow Active
           </div>
@@ -111,7 +112,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium rounded-lg shadow-lg transition-colors duration-150 disabled:opacity-50 text-sm flex items-center justify-center gap-2 mt-2"
+            className="w-full py-2.5 px-4 btn-brand-primary font-medium rounded-lg shadow-lg text-sm flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
           >
             {loading ? (
               <span>Authenticating...</span>

@@ -29,10 +29,10 @@ export default function SecurityMap({
     import('leaflet').then((L) => {
       if (!isMounted || !mapContainerRef.current) return;
 
-      // Default center: Campus coordinates (defaulting to standard center, e.g. 40.7128, -74.006)
+      // Default center: UC Riverside Campus coordinates (33.9737, -117.3281)
       const map = L.map(mapContainerRef.current, {
-        center: [40.7128, -74.006],
-        zoom: 14,
+        center: [33.9737, -117.3281],
+        zoom: 15,
         zoomControl: false,
       });
 
@@ -91,19 +91,33 @@ export default function SecurityMap({
 
         const shortToken = trip.tripToken.slice(0, 8);
         const displayName = alertObj?.decryptedProfile?.fullName || alertObj?.decryptedProfile?.name;
+        const police = alertObj?.nearestPolice?.[0];
 
         const popupContent = `
-          <div style="font-family: inherit; font-size: 13px; color: #0f172a; padding: 4px;">
+          <div style="font-family: inherit; font-size: 13px; color: #0f172a; padding: 4px; min-width: 200px;">
             <div style="font-weight: 700; margin-bottom: 2px;">
               ${displayName ? `🚨 ${displayName}` : `Session: ${shortToken}`}
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-bottom: 6px;">
+            <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">
               Status: <span style="font-weight: 600; color: ${hasAlert ? '#ef4444' : '#059669'};">${trip.status}</span>
             </div>
-            <div style="font-size: 11px; color: #475569;">
+            <div style="font-size: 11px; color: #475569; margin-bottom: 4px;">
               Battery: ${trip.batteryPct ?? 'N/A'}% | Last Ping: ${new Date(trip.updatedAt).toLocaleTimeString()}
             </div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; font-style: italic;">
+            ${police ? `
+              <div style="margin-top: 6px; padding: 6px; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 11px;">
+                <div style="font-weight: 700; color: #991b1b;">
+                  🚔 ${police.name}
+                </div>
+                <div style="margin-top: 2px;">
+                  <a href="tel:${police.phone || '(951) 827-5222'}" style="color: #b91c1c; font-weight: 700; text-decoration: underline; font-family: monospace;">
+                    📞 ${police.phone || '(951) 827-5222'}
+                  </a>
+                  <span style="color: #64748b; font-size: 10px;"> (${police.distanceKm.toFixed(2)} km)</span>
+                </div>
+              </div>
+            ` : ''}
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; font-style: italic;">
               ${displayName ? 'Identity unlocked via emergency trigger' : 'Privacy-by-default: Anonymous session'}
             </div>
           </div>

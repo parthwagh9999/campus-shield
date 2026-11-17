@@ -17,14 +17,14 @@ export interface UniversitySettings {
 }
 
 let universitySettings: UniversitySettings = {
-  universityName: 'Metropolitan State University',
-  universityShortName: 'MSU',
-  primaryColor: '#0284c7', // Sky Blue default
-  accentColor: '#10b981',  // Emerald Green default
-  themePreset: 'sky',
-  campusPolicePhone: '(555) 911-SAFE',
-  studentEscortPhone: '(555) 234-RIDE',
-  counselingHotline: '(555) 345-HELP',
+  universityName: 'University of California, Riverside',
+  universityShortName: 'UCR',
+  primaryColor: '#003B5C', // Official UCR Blue
+  accentColor: '#FFB81C',  // Official UCR Highlander Gold
+  themePreset: 'ucr',
+  campusPolicePhone: '(951) 827-5222',
+  studentEscortPhone: '(951) 827-3772',
+  counselingHotline: '(951) 827-5531',
   defaultCheckinIntervalHours: 48,
   gracePeriodSeconds: 60,
   lowBatteryThresholdPct: 5,

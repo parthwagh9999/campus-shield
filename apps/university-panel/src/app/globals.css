@@ -5,6 +5,73 @@
 :root {
   --background: #0f172a;
   --foreground: #f8fafc;
+  --theme-primary: #003B5C;
+  --theme-accent: #FFB81C;
+  --theme-primary-subtle: rgba(0, 59, 92, 0.15);
+  --theme-primary-border: rgba(0, 59, 92, 0.4);
+  --theme-accent-subtle: rgba(255, 184, 28, 0.15);
+  --theme-accent-border: rgba(255, 184, 28, 0.4);
+  --theme-primary-glow: 0 0 16px rgba(0, 59, 92, 0.5);
+}
+
+/* Dynamic University Brand Utilities */
+.btn-brand-primary {
+  background-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
+}
+.btn-brand-primary:hover {
+  filter: brightness(1.18);
+  box-shadow: 0 0 12px var(--theme-primary);
+}
+.btn-brand-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-brand-accent {
+  background-color: var(--theme-accent) !important;
+  color: #020617 !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease;
+}
+.btn-brand-accent:hover {
+  filter: brightness(1.12);
+}
+
+.badge-brand-primary {
+  background-color: var(--theme-primary-subtle) !important;
+  border: 1px solid var(--theme-primary-border) !important;
+  color: #ffffff !important;
+}
+
+.badge-brand-accent {
+  background-color: var(--theme-accent-subtle) !important;
+  border: 1px solid var(--theme-accent-border) !important;
+  color: var(--theme-accent) !important;
+}
+
+.text-brand-primary {
+  color: var(--theme-primary) !important;
+}
+
+.text-brand-accent {
+  color: var(--theme-accent) !important;
+}
+
+.border-brand-primary {
+  border-color: var(--theme-primary) !important;
+}
+
+.border-brand-accent {
+  border-color: var(--theme-accent) !important;
+}
+
+.bg-brand-primary {
+  background-color: var(--theme-primary) !important;
+}
+
+.bg-brand-accent {
+  background-color: var(--theme-accent) !important;
 }
 
 body {

@@ -59,7 +59,7 @@ export async function findNearestPoliceStation(
       lat: elLat,
       lng: elLng,
       distanceKm: haversineKm(lat, lng, elLat, elLng),
-      phone: el.tags?.phone ?? el.tags?.['contact:phone'] ?? undefined,
+      phone: el.tags?.phone ?? el.tags?.['contact:phone'] ?? '(951) 827-5222',
       address: formatAddress(el.tags),
     };
   });

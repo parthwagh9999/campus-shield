@@ -20,6 +20,7 @@ export default function AlertDrawer({
   const [resolvingAlert, setResolvingAlert] = useState<AlertItem | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const activeAlerts = alerts.filter((a) => a.status !== 'RESOLVED');
@@ -187,15 +188,68 @@ export default function AlertDrawer({
                   )}
                 </div>
 
-                {/* Nearest police station */}
-                {alert.nearestPolice?.[0] && (
-                  <div className="text-[11px] text-slate-400 mb-2.5 flex items-center gap-1.5 bg-slate-900/40 p-2 rounded border border-slate-800/50">
-                    <svg className="w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <span className="truncate">
-                      Nearest: <strong className="text-slate-300">{alert.nearestPolice[0].name}</strong> ({alert.nearestPolice[0].distanceKm.toFixed(1)} km)
-                    </span>
+                {/* Nearest police station & direct phone hotline */}
+                {alert.nearestPolice && alert.nearestPolice.length > 0 ? (
+                  <div className="bg-slate-950/90 rounded-lg p-3 border border-slate-700/80 mb-2.5 shadow-sm">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+                        <span className="text-sm">🚔</span>
+                        <span className="truncate">{alert.nearestPolice[0].name}</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono font-semibold">
+                        {alert.nearestPolice[0].distanceKm.toFixed(2)} km
+                      </span>
+                    </div>
+
+                    {alert.nearestPolice[0].address && (
+                      <div className="text-[11px] text-slate-400 mb-2 truncate">
+                        📍 {alert.nearestPolice[0].address}
+                      </div>
+                    )}
+
+                    {/* Direct Station Phone Number & Actions */}
+                    <div className="flex items-center gap-2 pt-1.5 border-t border-slate-800">
+                      <a
+                        href={`tel:${alert.nearestPolice[0].phone || '(951) 827-5222'}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 py-1.5 px-2.5 rounded bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 font-mono font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                        title="Click to Call Police Station"
+                      >
+                        <svg className="w-3.5 h-3.5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <span>📞 {alert.nearestPolice[0].phone || '(951) 827-5222'}</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const num = alert.nearestPolice![0].phone || '(951) 827-5222';
+                          navigator.clipboard.writeText(num);
+                          setCopiedPhone(alert.alertId);
+                          setTimeout(() => setCopiedPhone(null), 2000);
+                        }}
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded border border-slate-700 transition-colors shrink-0"
+                        title="Copy Police Station Phone Number"
+                      >
+                        {copiedPhone === alert.alertId ? '✓ Copied' : 'Copy #'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-950/80 rounded-lg p-2.5 border border-slate-800 mb-2.5 text-xs text-slate-400 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span>🚔</span>
+                      <span>UCR Police Dispatch</span>
+                    </div>
+                    <a
+                      href="tel:(951) 827-5222"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-red-400 font-mono font-bold hover:underline"
+                    >
+                      📞 (951) 827-5222
+                    </a>
                   </div>
                 )}
 

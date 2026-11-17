@@ -293,7 +293,7 @@ export default function BrandingCustomizer({ onSettingsChanged }: BrandingCustom
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 font-bold text-white text-xs rounded-xl shadow-lg transition-colors flex items-center gap-2"
+            className="px-6 py-2.5 btn-brand-primary font-bold text-xs rounded-xl shadow-lg flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

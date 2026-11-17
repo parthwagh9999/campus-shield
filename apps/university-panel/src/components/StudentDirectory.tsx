@@ -217,7 +217,7 @@ export default function StudentDirectory() {
 
             <button
               onClick={handleOpenAdd}
-              className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-semibold text-white shadow-md transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-1.5 btn-brand-primary rounded-lg text-xs font-semibold shadow-md flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -285,7 +285,7 @@ export default function StudentDirectory() {
                 onClick={() => setStatusFilter(f)}
                 className={`px-2.5 py-1 rounded transition-colors ${
                   statusFilter === f
-                    ? 'bg-sky-600 text-white font-medium shadow'
+                    ? 'btn-brand-primary font-medium shadow'
                     : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
                 }`}
               >
@@ -617,7 +617,7 @@ export default function StudentDirectory() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow"
+                  className="px-4 py-2 btn-brand-primary font-semibold rounded-lg shadow"
                 >
                   Enroll Student
                 </button>
@@ -691,7 +691,7 @@ export default function StudentDirectory() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow"
+                  className="px-4 py-2 btn-brand-primary font-semibold rounded-lg shadow"
                 >
                   Save Changes
                 </button>
@@ -735,7 +735,7 @@ Lucas Vance, lvance@university.edu, South Hall, 104, Mary Vance, +1-555-0188"
                   <button
                     type="submit"
                     disabled={!bulkCsvText.trim()}
-                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow disabled:opacity-50"
+                    className="px-4 py-2 btn-brand-primary font-semibold rounded-lg shadow disabled:opacity-50"
                   >
                     Import All
                   </button>

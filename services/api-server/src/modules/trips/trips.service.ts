@@ -271,28 +271,28 @@ export class TripsService {
         updatedAt: r.updated_at.toISOString(),
       }));
     } catch {
-      // In-memory demo active trips when PostgreSQL service is offline
+      // In-memory demo active trips when PostgreSQL service is offline (Centered on UC Riverside)
       return [
         {
           tripToken: 'c4b8b6e2-7634-4a41-b016-1f9fbe3c1622',
-          lat: 40.7128,
-          lng: -74.0060,
+          lat: 33.9740,
+          lng: -117.3275,
           status: 'ACTIVE',
           batteryPct: 91,
           updatedAt: new Date().toISOString(),
         },
         {
           tripToken: 'a94c11b0-2f31-4122-87ce-00124fe991a2',
-          lat: 40.7152,
-          lng: -74.0035,
+          lat: 33.9765,
+          lng: -117.3320,
           status: 'GRACE_PERIOD',
           batteryPct: 67,
           updatedAt: new Date().toISOString(),
         },
         {
           tripToken: '3b18e77a-dd12-4919-9154-8c88e99aa331',
-          lat: 40.7105,
-          lng: -74.0085,
+          lat: 33.9725,
+          lng: -117.3250,
           status: 'ALERT_COERCION',
           batteryPct: 42,
           updatedAt: new Date().toISOString(),
@@ -358,7 +358,7 @@ export class TripsService {
         createdAt: r.created_at.toISOString(),
       }));
     } catch {
-      // In-memory demo active alerts when PostgreSQL service is offline
+      // In-memory demo active alerts when PostgreSQL service is offline (UCR Campus)
       return [
         {
           alertId: 'alert-coercion-demo-01',
@@ -369,23 +369,31 @@ export class TripsService {
           status: 'OPEN',
           decryptedProfile: {
             fullName: 'Maya Lin',
-            universityEmail: 'mlin@university.edu',
-            dormBuilding: 'West Campus Hall',
+            universityEmail: 'mlin@ucr.edu',
+            dormBuilding: 'Dundee Hall',
             roomNumber: '412',
             emergencyContacts: [
-              { name: 'David Lin', phone: '+1-555-0144', relationship: 'Father' },
+              { name: 'David Lin', phone: '(951) 555-0144', relationship: 'Father' },
             ],
-            medicalNotes: 'Asthma inhaler in bag',
+            medicalNotes: 'Asthma inhaler in backpack (Carries Albuterol)',
           },
-          lastKnownCoords: { lat: 40.7105, lng: -74.0085 },
+          lastKnownCoords: { lat: 33.9725, lng: -117.3250 },
           nearestPolice: [
             {
-              name: 'University Police Substation 1',
-              distanceKm: 0.35,
-              phone: '+1-555-0100',
-              address: '142 College Ave',
-              lat: 40.7112,
-              lng: -74.0070,
+              name: 'UC Riverside Police Department (UCPD)',
+              distanceKm: 0.28,
+              phone: '(951) 827-5222',
+              address: '3500 Canyon Crest Dr, Riverside, CA 92507',
+              lat: 33.9744,
+              lng: -117.3248,
+            },
+            {
+              name: 'Riverside Police Department - Eastside Substation',
+              distanceKm: 4.1,
+              phone: '(951) 826-5700',
+              address: '4102 Orange St, Riverside, CA 92501',
+              lat: 33.9806,
+              lng: -117.3755,
             },
           ],
           resolutionNote: null,
