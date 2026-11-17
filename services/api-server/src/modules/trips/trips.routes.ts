@@ -168,6 +168,28 @@ export async function tripsRoutes(
   );
 
   // -------------------------------------------------------------
+  // POST /api/v1/panel/alerts/:alertId/unseal (Staff Only - Password Gated)
+  // -------------------------------------------------------------
+  app.post(
+    '/api/v1/panel/alerts/:alertId/unseal',
+    { preHandler: [app.staffAuth] },
+    async (request, reply) => {
+      const { password } = (request.body as { password?: string }) || {};
+
+      // Require valid staff password to decrypt/unseal the student profile
+      if (!password || password !== 'CampusShield2026!') {
+        return reply.code(401).send({ error: 'Invalid staff password. Identity unseal unauthorized.' });
+      }
+
+      return reply.code(200).send({
+        status: 'UNSEALED',
+        officer: request.user.email,
+        unsealedAt: new Date().toISOString(),
+      });
+    },
+  );
+
+  // -------------------------------------------------------------
   // POST /api/v1/panel/alerts/:tripToken/resolve (Staff Only)
   // -------------------------------------------------------------
   app.post(

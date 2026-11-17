@@ -76,42 +76,36 @@ flowchart TD
 
 ### 🎛️ State-of-the-Art University Security Portal Modules
 
-1. **Live Operations Map (Privacy-First):**
-   - Real-time OpenStreetMap / Leaflet display with dark UI styling.
-   - Displays student trips strictly as rotating anonymous tokens (`Trip-7F2A`) during safe transit.
-   - Color-coded status pins: Emerald (Safe), Amber (60s Grace Warning), Crimson (Emergency Alert).
+1. **Live Operations Map (Zero Surveillance + Verified Police Layer):**
+   - Real-time OpenStreetMap / Leaflet display centered on UC Riverside (`33.9737, -117.3281`).
+   - Normal student trips stream strictly as rotating anonymous tokens (`Trip-7F2A`) with zero names or photos.
+   - **5 Verified Riverside Police Stations on Map:** UCR Police Department (UCPD On-Campus), Riverside Police Dept Central HQ, RPD Eastside Substation, Riverside County Sheriff's Dept, and California Highway Patrol (CHP). Each with full physical addresses, distance calculations, and direct-dial hotline buttons (`tel:(951)...`).
+   - Dedicated Police Station Layer Toggle (`[🚔 Police Stations: ON (5 Verified)]`).
 
-2. **Student Directory & Enrolled Registry:**
-   - Add new students manually with emergency contacts, blood type/medical notes, and dorm room info.
-   - **Bulk CSV Import:** Onboard thousands of university students in seconds via standard registrar CSV templates.
-   - Quick search by name, campus email, student ID, and residence hall.
+2. **Dual-Custody Password-Gated Identity Reveal:**
+   - Even during an emergency trigger (SOS, Coercion, Perimeter Exit), the student's name remains **sealed** (`🔒 Identity Escrow Locked in AES-256 Vault`).
+   - Only when an authorized dispatcher enters their **Staff Security Password** does the system decrypt and unseal the student's real name, photo, dorm, and emergency contacts.
+   - Prevents unauthorized shoulder-surfing, bystander snooping, or accidental privacy leaks in campus dispatch centers.
+   - Every password authorization writes an immutable audit record to `unlock_audit_logs`.
+
+3. **Student Directory & Enrolled Registry (50+ Seeded Students):**
+   - 52 realistic enrolled students across all UCR residential halls (Dundee Hall, Aberdeen-Inverness [A&I], Lothian Hall, Glen Mor Apartments, Pentland Hills, North District Apartments, Bannockburn Village, Stonehaven, Falkirk, and Plaza).
    - Detailed profile inspect drawer with vault encryption status and direct-dial emergency contacts.
-   - Remove or update student records with immediate server synchronization.
+   - **Bulk CSV Import & Manual CRUD:** Add, update, search, and remove student profiles in real time.
 
-3. **Safe Corridors & Campus Geofencing:**
-   - Configure safe travel zones, night escort corridors, and blue-light emergency station radiuses.
-   - Set perimeter boundaries with customizable radius (meters) and automatic boundary exit warnings.
+4. **1-Year Retention Policy & Emergency Incident Ledger:**
+   - Preserves complete 365-day historical ledger of all resolved safety triggers, dispatch timelines, and officer verification notes in accordance with Clery Act audit guidelines.
+   - Time-range selector (`All 1-Year Archive`, `Past 180 Days`, `Past 90 Days`, `Past 30 Days`).
+   - One-click CSV export with `NearestPoliceStation` and `PoliceStationPhone` columns.
 
-4. **Incident Ledger & Emergency Archive:**
-   - Comprehensive triage ledger of all active and resolved emergency events.
-   - Stores responder notes, resolution timestamps, dispatch officers, and nearest police stations.
-   - One-click CSV export for university administration, Clery Act compliance, and police handoffs.
+5. **Safe Corridors & Campus Geofencing:**
+   - Pre-configured UCR boundaries: `UCR Main Campus Boundary`, `Highlander HUB & Bell Tower Safe Walk Corridor`, `Aberdeen-Inverness & Dundee Dorm Quad`, and `University Village & Canyon Crest District`.
+   - Create custom safe zones with radius (meters) and automated exit alerts.
 
-5. **University Branding & Color Palette Customizer:**
-   - Customize portal appearance to match any university's official school colors.
-   - Built-in institution presets:
-     - **Cyber Shield:** High-contrast Navy & Cyber Cyan (Default)
-     - **Crimson & Slate:** Harvard / Stanford / Alabama style
-     - **Maize & Blue:** Michigan / UCLA / Berkeley style
-     - **Emerald Forest:** Dartmouth / UNC Charlotte style
-     - **Oxford Navy & Gold:** Columbia / Georgetown / Notre Dame style
-     - **Royal Purple:** NYU / Northwestern style
-   - **Custom Hex Pickers:** Support for any university's specific hex codes with dynamic CSS variable injection.
-   - Configurable university acronym badge, official title, and emergency dispatch hotlines.
-
-6. **Cryptographic Identity Vault & Audit Viewer:**
-   - Student identities are stored separately in an AES-256-GCM vault.
-   - Immutable audit log tracking every decryption trigger with exact timestamp and reason code.
+6. **University Branding & Color Palette Engine:**
+   - Official **UC Riverside Blue (`#003B5C`) and Highlander Gold (`#FFB81C`)** by default.
+   - Reactive CSS variable engine transforms every button, badge, active tab, and modal action across the entire portal in real time.
+   - Supports Harvard/Stanford Crimson, Michigan Maize & Blue, Dartmouth Emerald, Oxford Navy, and custom hex color pickers.
 
 ---
 

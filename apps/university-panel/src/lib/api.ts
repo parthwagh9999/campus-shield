@@ -251,3 +251,19 @@ export async function updateUniversitySettings(data: Partial<UniversitySettings>
   const json = await res.json();
   return json.settings;
 }
+
+export async function unsealAlertIdentity(alertId: string, password: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/panel/alerts/${alertId}/unseal`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Invalid staff password' }));
+    throw new Error(data.error || 'Invalid staff authorization password');
+  }
+}
