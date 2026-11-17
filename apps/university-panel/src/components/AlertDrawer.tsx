@@ -9,6 +9,8 @@ interface AlertDrawerProps {
   selectedTripToken: string | null;
   onSelectTrip: (tripToken: string) => void;
   onAlertResolved: () => void;
+  onRequestPath?: (tripToken: string) => void;
+  activePathTripToken?: string | null;
 }
 
 export default function AlertDrawer({
@@ -16,6 +18,8 @@ export default function AlertDrawer({
   selectedTripToken,
   onSelectTrip,
   onAlertResolved,
+  onRequestPath,
+  activePathTripToken,
 }: AlertDrawerProps) {
   const [resolvingAlert, setResolvingAlert] = useState<AlertItem | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
@@ -175,7 +179,12 @@ export default function AlertDrawer({
             return (
               <div
                 key={alert.alertId}
-                onClick={() => onSelectTrip(alert.tripToken)}
+                onClick={() => {
+                  onSelectTrip(alert.tripToken);
+                  if (onRequestPath) {
+                    onRequestPath(alert.tripToken);
+                  }
+                }}
                 className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-slate-800/90 border-blue-500/60 shadow-lg ring-1 ring-blue-500/40'
@@ -356,6 +365,31 @@ export default function AlertDrawer({
                     </a>
                   </div>
                 )}
+
+                {/* View Day Trajectory Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectTrip(alert.tripToken);
+                    if (onRequestPath) {
+                      onRequestPath(alert.tripToken);
+                    }
+                  }}
+                  className={`w-full mb-2.5 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md ${
+                    activePathTripToken === alert.tripToken
+                      ? 'bg-amber-500 text-slate-950 border border-amber-300 ring-2 ring-amber-500/50'
+                      : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 hover:border-amber-400'
+                  }`}
+                  title="Render today's breadcrumb trajectory path on the live map"
+                >
+                  <span className="text-sm">🗺️</span>
+                  <span>
+                    {activePathTripToken === alert.tripToken
+                      ? "Today's Trajectory Active on Map"
+                      : "Show Today's Full Path on Map"}
+                  </span>
+                </button>
 
                 {/* Actions */}
                 <div className="flex gap-2">

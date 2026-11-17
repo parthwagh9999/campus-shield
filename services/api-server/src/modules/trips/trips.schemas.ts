@@ -124,3 +124,26 @@ export interface AlertRow {
   resolvedAt: string | null;
   createdAt: string;
 }
+
+export interface PathWaypoint {
+  lat: number;
+  lng: number;
+  timestamp: string;
+  batteryPct?: number;
+  speed?: number;
+  heading?: number;
+  label?: string;
+  isIncidentPoint?: boolean;
+  isStartPoint?: boolean;
+}
+
+export interface TripDayPath {
+  tripToken: string;
+  studentName?: string;
+  date: string;
+  waypoints: PathWaypoint[];
+  totalDistanceKm: number;
+  durationMinutes: number;
+  startLocation: string;
+  endLocation: string;
+}

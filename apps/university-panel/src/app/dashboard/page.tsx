@@ -10,10 +10,10 @@ import GeofenceManager from '../../components/GeofenceManager';
 import BrandingCustomizer from '../../components/BrandingCustomizer';
 import IncidentHistory from '../../components/IncidentHistory';
 import { getStaffSession, clearStaffSession } from '../../lib/auth';
-import { fetchActiveTrips, fetchAlerts, fetchUniversitySettings } from '../../lib/api';
+import { fetchActiveTrips, fetchAlerts, fetchUniversitySettings, fetchTripDayPath } from '../../lib/api';
 import { connectPanelSocket, disconnectPanelSocket } from '../../lib/socket';
 import { loadSavedSettings, applyThemeVariables, DEFAULT_SETTINGS } from '../../lib/theme';
-import type { AnonymizedTrip, AlertItem, StaffUser, UniversitySettings } from '../../types';
+import type { AnonymizedTrip, AlertItem, StaffUser, UniversitySettings, TripDayPath } from '../../types';
 
 type TabType = 'operations' | 'students' | 'geofences' | 'incidents' | 'branding';
 
@@ -25,7 +25,21 @@ export default function DashboardPage() {
   const [trips, setTrips] = useState<AnonymizedTrip[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [selectedTripToken, setSelectedTripToken] = useState<string | null>(null);
+  const [activeTripPath, setActiveTripPath] = useState<TripDayPath | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+
+  const handleShowTripPath = async (tripToken: string) => {
+    try {
+      const pathData = await fetchTripDayPath(tripToken);
+      setActiveTripPath(pathData);
+    } catch (err) {
+      console.error('Failed to load trip trajectory:', err);
+    }
+  };
+
+  const handleClearTripPath = () => {
+    setActiveTripPath(null);
+  };
 
   // Authentication check & initial settings load
   useEffect(() => {
@@ -317,15 +331,34 @@ export default function DashboardPage() {
                 trips={trips}
                 alerts={alerts}
                 selectedTripToken={selectedTripToken}
-                onSelectTrip={(token) => setSelectedTripToken(token)}
+                onSelectTrip={(token) => {
+                  setSelectedTripToken(token);
+                  const isAlert = alerts.some((a) => a.tripToken === token && a.status !== 'RESOLVED');
+                  if (isAlert) {
+                    handleShowTripPath(token);
+                  }
+                }}
+                activePath={activeTripPath}
+                onClearPath={handleClearTripPath}
+                onRequestPath={handleShowTripPath}
               />
             </main>
 
             <AlertDrawer
               alerts={alerts}
               selectedTripToken={selectedTripToken}
-              onSelectTrip={(token) => setSelectedTripToken(token)}
-              onAlertResolved={loadData}
+              onSelectTrip={(token) => {
+                setSelectedTripToken(token);
+                handleShowTripPath(token);
+              }}
+              onAlertResolved={() => {
+                loadData();
+                if (activeTripPath?.tripToken === selectedTripToken) {
+                  setActiveTripPath(null);
+                }
+              }}
+              onRequestPath={handleShowTripPath}
+              activePathTripToken={activeTripPath?.tripToken || null}
             />
           </>
         )}

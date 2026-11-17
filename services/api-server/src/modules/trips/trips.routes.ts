@@ -190,6 +190,28 @@ export async function tripsRoutes(
   );
 
   // -------------------------------------------------------------
+  // GET /api/v1/panel/trips/:tripToken/path (Staff Only)
+  // -------------------------------------------------------------
+  app.get(
+    '/api/v1/panel/trips/:tripToken/path',
+    { preHandler: [app.staffAuth] },
+    async (request, reply) => {
+      const { tripToken } = request.params as { tripToken: string };
+      if (!tripToken) {
+        return reply.code(400).send({ error: 'Missing tripToken parameter' });
+      }
+
+      try {
+        const pathData = await tripsService.getTripDayPath(tripToken);
+        return reply.code(200).send({ path: pathData });
+      } catch (err) {
+        log.error('Get trip day path error', { tripToken, error: (err as Error).message });
+        return reply.code(500).send({ error: 'Failed to retrieve trip trajectory path' });
+      }
+    },
+  );
+
+  // -------------------------------------------------------------
   // POST /api/v1/panel/alerts/:tripToken/resolve (Staff Only)
   // -------------------------------------------------------------
   app.post(

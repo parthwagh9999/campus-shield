@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import type { AnonymizedTrip, AlertItem } from '../types';
+import type { AnonymizedTrip, AlertItem, TripDayPath } from '../types';
 
 interface MapProps {
   trips: AnonymizedTrip[];
   alerts: AlertItem[];
   selectedTripToken: string | null;
   onSelectTrip: (tripToken: string) => void;
+  activePath?: TripDayPath | null;
+  onClearPath?: () => void;
+  onRequestPath?: (tripToken: string) => void;
 }
 
 export interface VerifiedPoliceStation {
@@ -85,12 +88,17 @@ export default function SecurityMap({
   alerts,
   selectedTripToken,
   onSelectTrip,
+  activePath,
+  onClearPath,
+  onRequestPath,
 }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
   const policeMarkersRef = useRef<Map<string, any>>(new Map());
+  const pathLayersRef = useRef<any[]>([]);
   const [showPoliceStations, setShowPoliceStations] = useState(true);
+  const [isPathDetailsOpen, setIsPathDetailsOpen] = useState(true);
 
   // Initialize Leaflet map once on client
   useEffect(() => {
@@ -166,7 +174,7 @@ export default function SecurityMap({
         const police = alertObj?.nearestPolice?.[0];
 
         const popupContent = `
-          <div style="font-family: inherit; font-size: 13px; color: #0f172a; padding: 4px; min-width: 220px;">
+          <div style="font-family: inherit; font-size: 13px; color: #0f172a; padding: 4px; min-width: 230px;">
             <div style="font-weight: 700; margin-bottom: 2px;">
               ${displayName ? `🚨 ${displayName}` : `Session: ${shortToken}`}
             </div>
@@ -189,6 +197,32 @@ export default function SecurityMap({
                 </div>
               </div>
             ` : ''}
+            ${(hasAlert || trip.status.startsWith('ALERT_')) ? `
+              <div style="margin-top: 8px;">
+                <button
+                  id="btn-day-path-${trip.tripToken}"
+                  type="button"
+                  style="
+                    width: 100%;
+                    padding: 6px 10px;
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    color: #000000;
+                    font-weight: 800;
+                    font-size: 11px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                  "
+                >
+                  🗺️ Show Today's Full Path
+                </button>
+              </div>
+            ` : ''}
             <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; font-style: italic;">
               ${displayName ? 'Identity unlocked via emergency trigger' : 'Privacy-by-default: Anonymous session'}
             </div>
@@ -207,6 +241,19 @@ export default function SecurityMap({
 
           marker.on('click', () => {
             onSelectTrip(trip.tripToken);
+            if ((hasAlert || trip.status.startsWith('ALERT_')) && onRequestPath) {
+              onRequestPath(trip.tripToken);
+            }
+          });
+
+          marker.on('popupopen', () => {
+            const btn = document.getElementById(`btn-day-path-${trip.tripToken}`);
+            if (btn && onRequestPath) {
+              btn.onclick = (e) => {
+                e.stopPropagation();
+                onRequestPath(trip.tripToken);
+              };
+            }
           });
 
           markersRef.current.set(trip.tripToken, marker);
@@ -221,7 +268,7 @@ export default function SecurityMap({
         }
       });
     });
-  }, [trips, alerts, onSelectTrip]);
+  }, [trips, alerts, onSelectTrip, onRequestPath]);
 
   // Render or remove police station markers
   useEffect(() => {
@@ -318,6 +365,168 @@ export default function SecurityMap({
     });
   }, [showPoliceStations]);
 
+  // Draw full day trajectory when activePath changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    // Clean up previous path layers
+    pathLayersRef.current.forEach((layer) => layer.remove());
+    pathLayersRef.current = [];
+
+    if (!activePath || !activePath.waypoints || activePath.waypoints.length === 0) {
+      return;
+    }
+
+    import('leaflet').then((L) => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+
+      const latLngs = activePath.waypoints.map((wp) => [wp.lat, wp.lng] as [number, number]);
+
+      // 1. Ambient Golden/Amber Outer Glow Polyline
+      const glowPolyline = L.polyline(latLngs, {
+        color: '#f59e0b',
+        weight: 10,
+        opacity: 0.45,
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(map);
+      pathLayersRef.current.push(glowPolyline);
+
+      // 2. High-contrast Crisp Trajectory Polyline
+      const mainPolyline = L.polyline(latLngs, {
+        color: '#dc2626',
+        weight: 4,
+        opacity: 0.95,
+        dashArray: '8, 8',
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(map);
+      pathLayersRef.current.push(mainPolyline);
+
+      // 3. Waypoint markers along the route
+      activePath.waypoints.forEach((wp, index) => {
+        const isStart = wp.isStartPoint || index === 0;
+        const isIncident = wp.isIncidentPoint || index === activePath.waypoints.length - 1;
+        const timeStr = new Date(wp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        let iconHtml = '';
+        let iconSize: [number, number] = [24, 24];
+        let iconAnchor: [number, number] = [12, 12];
+
+        if (isIncident) {
+          iconHtml = `
+            <div style="
+              width: 38px;
+              height: 38px;
+              border-radius: 50%;
+              background: #dc2626;
+              border: 3px solid #ffffff;
+              box-shadow: 0 0 24px #ef4444, 0 4px 8px rgba(0,0,0,0.6);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #ffffff;
+              font-size: 18px;
+              cursor: pointer;
+            ">🚨</div>
+          `;
+          iconSize = [38, 38];
+          iconAnchor = [19, 19];
+        } else if (isStart) {
+          iconHtml = `
+            <div style="
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              background: #16a34a;
+              border: 2px solid #ffffff;
+              box-shadow: 0 0 16px rgba(22, 163, 74, 0.9), 0 2px 4px rgba(0,0,0,0.5);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #ffffff;
+              font-size: 15px;
+              font-weight: 800;
+              cursor: pointer;
+            ">🏁</div>
+          `;
+          iconSize = [32, 32];
+          iconAnchor = [16, 16];
+        } else {
+          iconHtml = `
+            <div style="
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              background: #0f172a;
+              border: 2px solid #f59e0b;
+              box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #f59e0b;
+              font-size: 11px;
+              font-weight: 800;
+              font-family: monospace;
+              cursor: pointer;
+            ">${index + 1}</div>
+          `;
+          iconSize = [24, 24];
+          iconAnchor = [12, 12];
+        }
+
+        const icon = L.divIcon({
+          className: 'trajectory-waypoint-icon',
+          html: iconHtml,
+          iconSize,
+          iconAnchor,
+        });
+
+        const popupHtml = `
+          <div style="font-family: inherit; font-size: 12px; color: #0f172a; padding: 4px; min-width: 210px;">
+            <div style="font-weight: 800; color: ${isIncident ? '#dc2626' : isStart ? '#16a34a' : '#003B5C'}; font-size: 13px; margin-bottom: 2px;">
+              ${isIncident ? '🚨 Incident Trigger Point' : isStart ? '🏁 Start Point (Departure)' : `📍 Waypoint #${index + 1}`}
+            </div>
+            <div style="font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              ${wp.label || 'Campus Location'}
+            </div>
+            <div style="font-size: 11px; color: #475569;">
+              🕒 Time: <strong>${timeStr}</strong>
+            </div>
+            ${wp.batteryPct !== undefined ? `
+              <div style="font-size: 11px; color: #475569;">
+                🔋 Battery: <strong>${wp.batteryPct}%</strong>
+              </div>
+            ` : ''}
+            ${wp.speed !== undefined ? `
+              <div style="font-size: 11px; color: #475569;">
+                ⚡ Speed: <strong>${wp.speed.toFixed(1)} m/s</strong>
+              </div>
+            ` : ''}
+            <div style="font-size: 10px; color: #94a3b8; font-family: monospace; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+              Coords: ${wp.lat.toFixed(5)}, ${wp.lng.toFixed(5)}
+            </div>
+          </div>
+        `;
+
+        const marker = L.marker([wp.lat, wp.lng], { icon })
+          .addTo(map)
+          .bindPopup(popupHtml);
+
+        pathLayersRef.current.push(marker);
+      });
+
+      // Fit map viewport smoothly around the full trajectory
+      try {
+        const bounds = mainPolyline.getBounds();
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+        }
+      } catch (err) {}
+    });
+  }, [activePath]);
+
   // Pan to selected trip when changed
   useEffect(() => {
     if (!selectedTripToken || !mapInstanceRef.current) return;
@@ -351,6 +560,117 @@ export default function SecurityMap({
           />
         </button>
       </div>
+
+      {/* Active Day Path Trajectory Summary Card */}
+      {activePath && (
+        <div className="absolute top-4 right-4 z-20 w-80 max-h-[85vh] bg-slate-900/95 backdrop-blur-md border border-amber-500/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs">
+          {/* Card Header */}
+          <div className="p-3 bg-gradient-to-r from-amber-950/80 to-slate-900 border-b border-amber-500/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🗺️</span>
+              <div>
+                <h3 className="font-bold text-white text-xs leading-none">
+                  Today's Student Trajectory
+                </h3>
+                <span className="text-[10px] text-amber-400 font-mono">
+                  {activePath.studentName || `Token: ${activePath.tripToken.slice(0, 8)}`}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsPathDetailsOpen(!isPathDetailsOpen)}
+                className="p-1 rounded text-slate-400 hover:text-white"
+                title={isPathDetailsOpen ? 'Collapse timeline' : 'Expand timeline'}
+              >
+                {isPathDetailsOpen ? '▲' : '▼'}
+              </button>
+              {onClearPath && (
+                <button
+                  type="button"
+                  onClick={onClearPath}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold"
+                  title="Close Trajectory Path"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="p-2.5 bg-slate-950/80 border-b border-slate-800 grid grid-cols-3 gap-2 text-center">
+            <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="text-[10px] text-slate-400">Total Distance</div>
+              <div className="font-mono font-bold text-amber-400">{activePath.totalDistanceKm} km</div>
+            </div>
+            <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="text-[10px] text-slate-400">Duration</div>
+              <div className="font-mono font-bold text-white">{activePath.durationMinutes} min</div>
+            </div>
+            <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="text-[10px] text-slate-400">Waypoints</div>
+              <div className="font-mono font-bold text-emerald-400">{activePath.waypoints.length} points</div>
+            </div>
+          </div>
+
+          {/* Route Terminals */}
+          <div className="p-3 bg-slate-900/60 border-b border-slate-800 space-y-1.5">
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 font-bold shrink-0">🏁 Origin:</span>
+              <span className="text-slate-200 truncate">{activePath.startLocation}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-red-400 font-bold shrink-0">🚨 Incident:</span>
+              <span className="text-slate-200 truncate">{activePath.endLocation}</span>
+            </div>
+          </div>
+
+          {/* Collapsible Waypoints Breadcrumbs Timeline */}
+          {isPathDetailsOpen && (
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-64">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Chronological Breadcrumbs ({activePath.date})
+              </div>
+              {activePath.waypoints.map((wp, idx) => {
+                const isStart = wp.isStartPoint || idx === 0;
+                const isEnd = wp.isIncidentPoint || idx === activePath.waypoints.length - 1;
+                return (
+                  <div
+                    key={idx}
+                    className={`p-2 rounded-lg border text-[11px] flex items-center justify-between transition-colors ${
+                      isEnd
+                        ? 'bg-red-950/40 border-red-500/50 text-red-200'
+                        : isStart
+                        ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                        : 'bg-slate-950/60 border-slate-800/80 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono font-bold text-[10px] shrink-0">
+                        {isEnd ? '🚨' : isStart ? '🏁' : `#${idx + 1}`}
+                      </span>
+                      <div className="truncate">
+                        <div className="font-semibold truncate">{wp.label || `Waypoint ${idx + 1}`}</div>
+                        <div className="text-[10px] opacity-70">
+                          {new Date(wp.timestamp).toLocaleTimeString()}
+                          {wp.speed !== undefined ? ` • ${wp.speed.toFixed(1)} m/s` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    {wp.batteryPct !== undefined && (
+                      <span className="font-mono text-[10px] shrink-0 font-bold text-slate-400">
+                        🔋 {wp.batteryPct}%
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Map Legend Overlay */}
       <div className="absolute bottom-4 left-4 z-10 bg-slate-900/95 backdrop-blur border border-slate-800 rounded-xl p-3.5 shadow-2xl text-xs space-y-2">

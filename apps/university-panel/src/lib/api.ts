@@ -6,6 +6,7 @@ import type {
   StudentListItem,
   CampusGeofence,
   UniversitySettings,
+  TripDayPath,
 } from '../types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -266,4 +267,17 @@ export async function unsealAlertIdentity(alertId: string, password: string): Pr
     const data = await res.json().catch(() => ({ error: 'Invalid staff password' }));
     throw new Error(data.error || 'Invalid staff authorization password');
   }
+}
+
+export async function fetchTripDayPath(tripToken: string): Promise<TripDayPath> {
+  const res = await fetch(`${API_BASE}/api/v1/panel/trips/${tripToken}/path`, {
+    headers: { ...getAuthHeader() },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch trip day trajectory path');
+  }
+
+  const json = await res.json();
+  return json.path;
 }
