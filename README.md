@@ -16,7 +16,7 @@ Many university students—especially out-of-city and international students—f
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ System Architecture & Console Capabilities
 
 ```mermaid
 flowchart TD
@@ -42,6 +42,10 @@ flowchart TD
 
     subgraph UniversityPanel["University Security Web Panel (Next.js)"]
         LiveMap["Live MapLibre / Leaflet Map<br/>(Anonymous Dots)"]
+        StudentReg["Student Registry<br/>(Add/Remove/Bulk CSV Import)"]
+        Corridors["Safe Corridors & Geofences<br/>(Blue-Light Zones)"]
+        Ledger["Incident Ledger & Triage<br/>(Exportable Emergency History)"]
+        BrandCustom["University Branding<br/>(School Color Palettes & Custom Hex)"]
         AlertQueue["Priority Alert Drawer<br/>(Decrypted Profile on Emergency)"]
         PoliceLookup["OSM Overpass Police Lookup<br/>(One-Click Dispatch Summary)"]
         AuditViewer["Audit Log Inspector"]
@@ -64,7 +68,50 @@ flowchart TD
     Vault --> Audit
     Vault --> AlertQueue
     Fastify --> PoliceLookup
+    Fastify --> StudentReg
+    Fastify --> Corridors
+    Fastify --> Ledger
+    Fastify --> BrandCustom
 ```
+
+### 🎛️ State-of-the-Art University Security Portal Modules
+
+1. **Live Operations Map (Privacy-First):**
+   - Real-time OpenStreetMap / Leaflet display with dark UI styling.
+   - Displays student trips strictly as rotating anonymous tokens (`Trip-7F2A`) during safe transit.
+   - Color-coded status pins: Emerald (Safe), Amber (60s Grace Warning), Crimson (Emergency Alert).
+
+2. **Student Directory & Enrolled Registry:**
+   - Add new students manually with emergency contacts, blood type/medical notes, and dorm room info.
+   - **Bulk CSV Import:** Onboard thousands of university students in seconds via standard registrar CSV templates.
+   - Quick search by name, campus email, student ID, and residence hall.
+   - Detailed profile inspect drawer with vault encryption status and direct-dial emergency contacts.
+   - Remove or update student records with immediate server synchronization.
+
+3. **Safe Corridors & Campus Geofencing:**
+   - Configure safe travel zones, night escort corridors, and blue-light emergency station radiuses.
+   - Set perimeter boundaries with customizable radius (meters) and automatic boundary exit warnings.
+
+4. **Incident Ledger & Emergency Archive:**
+   - Comprehensive triage ledger of all active and resolved emergency events.
+   - Stores responder notes, resolution timestamps, dispatch officers, and nearest police stations.
+   - One-click CSV export for university administration, Clery Act compliance, and police handoffs.
+
+5. **University Branding & Color Palette Customizer:**
+   - Customize portal appearance to match any university's official school colors.
+   - Built-in institution presets:
+     - **Cyber Shield:** High-contrast Navy & Cyber Cyan (Default)
+     - **Crimson & Slate:** Harvard / Stanford / Alabama style
+     - **Maize & Blue:** Michigan / UCLA / Berkeley style
+     - **Emerald Forest:** Dartmouth / UNC Charlotte style
+     - **Oxford Navy & Gold:** Columbia / Georgetown / Notre Dame style
+     - **Royal Purple:** NYU / Northwestern style
+   - **Custom Hex Pickers:** Support for any university's specific hex codes with dynamic CSS variable injection.
+   - Configurable university acronym badge, official title, and emergency dispatch hotlines.
+
+6. **Cryptographic Identity Vault & Audit Viewer:**
+   - Student identities are stored separately in an AES-256-GCM vault.
+   - Immutable audit log tracking every decryption trigger with exact timestamp and reason code.
 
 ---
 

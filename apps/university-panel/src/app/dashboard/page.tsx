@@ -5,20 +5,29 @@ import { useRouter } from 'next/navigation';
 import SecurityMap from '../../components/Map';
 import AlertDrawer from '../../components/AlertDrawer';
 import AuditLogModal from '../../components/AuditLogModal';
+import StudentDirectory from '../../components/StudentDirectory';
+import GeofenceManager from '../../components/GeofenceManager';
+import BrandingCustomizer from '../../components/BrandingCustomizer';
+import IncidentHistory from '../../components/IncidentHistory';
 import { getStaffSession, clearStaffSession } from '../../lib/auth';
-import { fetchActiveTrips, fetchAlerts } from '../../lib/api';
+import { fetchActiveTrips, fetchAlerts, fetchUniversitySettings } from '../../lib/api';
 import { connectPanelSocket, disconnectPanelSocket } from '../../lib/socket';
-import type { AnonymizedTrip, AlertItem, StaffUser } from '../../types';
+import { loadSavedSettings, applyThemeVariables, DEFAULT_SETTINGS } from '../../lib/theme';
+import type { AnonymizedTrip, AlertItem, StaffUser, UniversitySettings } from '../../types';
+
+type TabType = 'operations' | 'students' | 'geofences' | 'incidents' | 'branding';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<StaffUser | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('operations');
+  const [settings, setSettings] = useState<UniversitySettings>(DEFAULT_SETTINGS);
   const [trips, setTrips] = useState<AnonymizedTrip[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [selectedTripToken, setSelectedTripToken] = useState<string | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
 
-  // Authentication check
+  // Authentication check & initial settings load
   useEffect(() => {
     const session = getStaffSession();
     if (!session) {
@@ -26,6 +35,19 @@ export default function DashboardPage() {
     } else {
       setCurrentUser(session);
     }
+
+    const localSettings = loadSavedSettings();
+    setSettings(localSettings);
+    applyThemeVariables(localSettings.primaryColor, localSettings.accentColor);
+
+    fetchUniversitySettings()
+      .then((remote) => {
+        if (remote) {
+          setSettings(remote);
+          applyThemeVariables(remote.primaryColor, remote.accentColor);
+        }
+      })
+      .catch(() => {});
   }, [router]);
 
   // Initial load
@@ -88,6 +110,11 @@ export default function DashboardPage() {
     router.push('/');
   };
 
+  const handleSettingsChanged = (newSettings: UniversitySettings) => {
+    setSettings(newSettings);
+    applyThemeVariables(newSettings.primaryColor, newSettings.accentColor);
+  };
+
   if (!currentUser) {
     return (
       <div className="h-screen w-screen bg-slate-950 flex items-center justify-center text-slate-400">
@@ -102,43 +129,147 @@ export default function DashboardPage() {
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950">
       {/* Top Navigation Bar */}
       <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shrink-0">
+        {/* Left: Branding & Acronym */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md transition-all duration-300"
+            style={{
+              backgroundColor: settings.primaryColor || '#0284c7',
+              boxShadow: `0 0 12px ${settings.primaryColor}50`,
+            }}
+          >
+            {settings.universityShortName || 'CS'}
           </div>
           <div>
-            <h1 className="font-bold text-sm tracking-wide text-white leading-none">CampusShield</h1>
-            <p className="text-[10px] text-slate-400 mt-0.5">Live University Security Console</p>
-          </div>
-        </div>
-
-        {/* Stats Pill */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-slate-950 rounded-full border border-slate-800 text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-300 font-medium">{trips.length} Active Trips</span>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">Privacy Escrow Active</span>
-          </div>
-
-          {activeAlertsCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-red-950/80 border border-red-500/50 rounded-full text-xs text-red-300 font-bold animate-pulse">
-              <span>🚨</span>
-              <span>{activeAlertsCount} Emergency Incidents</span>
+            <div className="flex items-center gap-2">
+              <h1 className="font-bold text-sm tracking-wide text-white leading-none">
+                {settings.universityName || 'CampusShield'}
+              </h1>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono uppercase tracking-wider">
+                Console
+              </span>
             </div>
-          )}
+            <p className="text-[10px] text-slate-400 mt-0.5">Zero-Surveillance Escrow Operations</p>
+          </div>
         </div>
 
-        {/* User profile & actions */}
+        {/* Center: Main Navigation Tabs */}
+        <nav className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
+          <button
+            onClick={() => setActiveTab('operations')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              activeTab === 'operations'
+                ? 'text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            style={
+              activeTab === 'operations'
+                ? { backgroundColor: settings.primaryColor }
+                : undefined
+            }
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            <span>Live Map</span>
+            {trips.length > 0 && (
+              <span className="w-4 h-4 rounded-full bg-slate-900/60 text-[10px] flex items-center justify-center font-mono">
+                {trips.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('students')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              activeTab === 'students'
+                ? 'text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            style={
+              activeTab === 'students'
+                ? { backgroundColor: settings.primaryColor }
+                : undefined
+            }
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <span>Student Registry</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('geofences')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              activeTab === 'geofences'
+                ? 'text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            style={
+              activeTab === 'geofences'
+                ? { backgroundColor: settings.primaryColor }
+                : undefined
+            }
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Safe Corridors</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('incidents')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              activeTab === 'incidents'
+                ? 'text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            style={
+              activeTab === 'incidents'
+                ? { backgroundColor: settings.primaryColor }
+                : undefined
+            }
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>Incident Ledger</span>
+            {activeAlertsCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center font-bold animate-pulse">
+                {activeAlertsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('branding')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              activeTab === 'branding'
+                ? 'text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            style={
+              activeTab === 'branding'
+                ? { backgroundColor: settings.primaryColor }
+                : undefined
+            }
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            <span>Branding & Colors</span>
+          </button>
+        </nav>
+
+        {/* Right side: Audit logs, user info & actions */}
         <div className="flex items-center gap-3">
           {(currentUser.role === 'ADMIN' || currentUser.role === 'AUDITOR') && (
             <button
               onClick={() => setIsAuditModalOpen(true)}
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors flex items-center gap-1.5"
             >
-              <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span>Audit Logs</span>
@@ -147,7 +278,12 @@ export default function DashboardPage() {
 
           <div className="text-right text-xs">
             <div className="font-semibold text-slate-200">{currentUser.displayName || currentUser.email}</div>
-            <div className="text-[10px] text-blue-400 font-mono tracking-wider">{currentUser.role}</div>
+            <div
+              className="text-[10px] font-mono tracking-wider font-semibold uppercase"
+              style={{ color: settings.accentColor || '#10b981' }}
+            >
+              {currentUser.role}
+            </div>
           </div>
 
           <button
@@ -162,23 +298,37 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main split view: Live Map on left, Alert Drawer on right */}
+      {/* Main Content Area based on Active Tab */}
       <div className="flex-1 flex overflow-hidden relative">
-        <main className="flex-1 h-full relative">
-          <SecurityMap
-            trips={trips}
-            alerts={alerts}
-            selectedTripToken={selectedTripToken}
-            onSelectTrip={(token) => setSelectedTripToken(token)}
-          />
-        </main>
+        {activeTab === 'operations' && (
+          <>
+            <main className="flex-1 h-full relative">
+              <SecurityMap
+                trips={trips}
+                alerts={alerts}
+                selectedTripToken={selectedTripToken}
+                onSelectTrip={(token) => setSelectedTripToken(token)}
+              />
+            </main>
 
-        <AlertDrawer
-          alerts={alerts}
-          selectedTripToken={selectedTripToken}
-          onSelectTrip={(token) => setSelectedTripToken(token)}
-          onAlertResolved={loadData}
-        />
+            <AlertDrawer
+              alerts={alerts}
+              selectedTripToken={selectedTripToken}
+              onSelectTrip={(token) => setSelectedTripToken(token)}
+              onAlertResolved={loadData}
+            />
+          </>
+        )}
+
+        {activeTab === 'students' && <StudentDirectory />}
+
+        {activeTab === 'geofences' && <GeofenceManager />}
+
+        {activeTab === 'incidents' && <IncidentHistory alerts={alerts} />}
+
+        {activeTab === 'branding' && (
+          <BrandingCustomizer onSettingsChanged={handleSettingsChanged} />
+        )}
       </div>
 
       {/* Audit Log Modal */}

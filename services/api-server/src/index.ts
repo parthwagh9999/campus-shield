@@ -10,11 +10,15 @@ import { studentAuth, staffAuth } from './modules/auth/auth.middleware.js';
 import { VaultService } from './modules/vault/vault.service.js';
 import { CheckinService } from './modules/checkin/checkin.service.js';
 import { TripsService } from './modules/trips/trips.service.js';
+import { StudentsService } from './modules/students/students.service.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { vaultRoutes } from './modules/vault/vault.routes.js';
 import { checkinRoutes } from './modules/checkin/checkin.routes.js';
 import { tripsRoutes } from './modules/trips/trips.routes.js';
 import { policeRoutes } from './modules/police/police.routes.js';
+import { studentsRoutes } from './modules/students/students.routes.js';
+import { geofencesRoutes } from './modules/geofences/geofences.routes.js';
+import { settingsRoutes } from './modules/settings/settings.routes.js';
 import { initBroadcaster } from './ws/broadcaster.js';
 import { initCheckinWorker } from './modules/checkin/checkin.worker.js';
 import { initTripsWorker } from './modules/trips/trips.worker.js';
@@ -56,6 +60,7 @@ export async function buildApp() {
   const vaultService = new VaultService(pool);
   const checkinService = new CheckinService(pool, vaultService);
   const tripsService = new TripsService(pool, vaultService);
+  const studentsService = new StudentsService(pool, vaultService);
 
   // Health check
   app.get('/health', async () => ({
@@ -70,8 +75,11 @@ export async function buildApp() {
   await app.register(checkinRoutes, { checkinService });
   await app.register(tripsRoutes, { tripsService });
   await app.register(policeRoutes);
+  await app.register(studentsRoutes, { studentsService });
+  await app.register(geofencesRoutes);
+  await app.register(settingsRoutes);
 
-  return { app, vaultService, checkinService, tripsService };
+  return { app, vaultService, checkinService, tripsService, studentsService };
 }
 
 async function start() {

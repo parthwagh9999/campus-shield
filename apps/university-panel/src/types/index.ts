@@ -69,3 +69,56 @@ export interface AuditLogItem {
   details: Record<string, unknown> | null;
   unlockedAt: string;
 }
+
+export interface StudentListItem {
+  studentId: string;
+  universityEmail: string;
+  fullName: string;
+  dormBuilding?: string;
+  roomNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  medicalNotes?: string;
+  checkinIntervalHours: number;
+  nextCheckinDue: string | null;
+  status: 'SAFE' | 'OVERDUE' | 'ACTIVE_TRIP';
+  factorsConfigured: boolean;
+  createdAt: string;
+}
+
+export interface CampusGeofence {
+  id: string;
+  name: string;
+  category: 'CAMPUS_PERIMETER' | 'SAFE_CORRIDOR' | 'DORM_QUAD' | 'HIGH_ALERT_ZONE';
+  color: string;
+  centerLat: number;
+  centerLng: number;
+  radiusMeters: number;
+  description: string;
+  active: boolean;
+  alertOnExit: boolean;
+}
+
+export interface UniversityTheme {
+  id: string;
+  name: string;
+  primaryColor: string;
+  accentColor: string;
+  bgDark: string;
+  primaryGlow: string;
+}
+
+export interface UniversitySettings {
+  universityName: string;
+  universityShortName: string;
+  primaryColor: string;
+  accentColor: string;
+  themePreset: string;
+  campusPolicePhone: string;
+  studentEscortPhone: string;
+  counselingHotline: string;
+  defaultCheckinIntervalHours: number;
+  gracePeriodSeconds: number;
+  lowBatteryThresholdPct: number;
+  require2FAForStaff: boolean;
+}
