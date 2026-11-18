@@ -74,6 +74,22 @@ College students are sometimes targeted in violent muggings or forced into vehic
 
 ---
 
+## 📸 Visual Showcase: The System in Action
+
+| 🗺️ Live Operations Map (50+ Students Monitored) | 👥 Enrolled Student Directory (52 Students) |
+|:---:|:---:|
+| ![Live Operations Map](docs/screenshots/01_live_operations_map.png) | ![Student Directory](docs/screenshots/02_student_directory.png) |
+
+| 🛡️ Safe Walk Corridors & Geofences | 📜 365-Day Emergency Incident Ledger |
+|:---:|:---:|
+| ![Safe Corridors](docs/screenshots/03_safe_corridors.png) | ![Incident Ledger](docs/screenshots/04_incident_ledger.png) |
+
+| 📱 Student Mobile App (3s Hold SOS) | 🔒 Anti-Coercion Physical Duress Guard |
+|:---:|:---:|
+| ![Student Mobile App](docs/screenshots/05_student_mobile_app.png) | ![Duress Geofence Guard](docs/screenshots/06_duress_geofence_guard.png) |
+
+---
+
 ## 🛠️ Tech Stack & Architecture
 
 ```

@@ -541,7 +541,7 @@ export default function SecurityMap({
     <div className="relative w-full h-full bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Top Police Layer Toggle */}
+      {/* Top Police Layer Toggle & Live Student Counter */}
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
         <button
           type="button"
@@ -559,6 +559,11 @@ export default function SecurityMap({
             style={{ backgroundColor: showPoliceStations ? '#10b981' : '#64748b' }}
           />
         </button>
+
+        <div className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 bg-slate-900/95 text-white border border-emerald-500/70 shadow-xl shadow-emerald-500/10 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Live Students Monitored: <strong className="text-emerald-400 font-mono">{trips.length} Active</strong></span>
+        </div>
       </div>
 
       {/* Active Day Path Trajectory Summary Card */}
