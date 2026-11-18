@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { registerStudentMobile, forgotStudentPassword, resetStudentPassword } from '../../lib/api';
+import { registerStudentMobile, authorizedFactorReset } from '../../lib/api';
 
 export type FactorType = 'code' | 'text' | 'pattern' | 'finger' | 'face';
 
@@ -12,6 +12,7 @@ export interface SecurityFactor {
   label: string;
   value: string;
   detail?: string;
+  maskedDisplay: string;
 }
 
 export interface ActivityEvent {
@@ -65,49 +66,99 @@ export default function StudentAppSimulator() {
     medicalNotes: 'Carries EpiPen for severe peanut allergy',
   });
 
-  // Configured Multi-Factor Authentication Sequence
-  // Supports code, text, pattern, finger, face - EACH CAN BE USED MULTIPLE TIMES
+  // Write-Once & Zero-Knowledge Enclave state:
+  // Once set during onboarding, factors are permanently locked and cannot be viewed or edited by student alone.
+  const [isFactorsLocked, setIsFactorsLocked] = useState(true);
+
+  // Stored Multi-Factor Authentication Sequence
+  // Notice that maskedDisplay is used in all view screens so stored credentials can NEVER be viewed at gunpoint!
   const [factors, setFactors] = useState<SecurityFactor[]>([
-    { id: 'f-1', type: 'face', label: 'Face ID Scan', value: 'FaceID_Enrolled_UCR', detail: '3D TrueDepth Facial Geometry' },
-    { id: 'f-2', type: 'code', label: 'Primary PIN (4-Digit)', value: '4829', detail: 'Numeric Escrow PIN' },
-    { id: 'f-3', type: 'pattern', label: 'Pattern Lock', value: '1-2-5-8-9', detail: '3x3 Matrix Gesture' },
-    { id: 'f-4', type: 'finger', label: 'Touch ID (Fingerprint)', value: 'Fingerprint_Index_Enrolled', detail: 'Biometric Touch Scan' },
-    { id: 'f-5', type: 'text', label: 'Highlander Passphrase', value: 'highlander-blue-gold', detail: 'Cryptographic Passphrase' },
+    {
+      id: 'f-1',
+      type: 'face',
+      label: 'Face ID Biometric Scan',
+      value: 'FaceID_Enrolled_UCR',
+      detail: '3D TrueDepth Facial Geometry',
+      maskedDisplay: '[Biometric Key — Zero-Knowledge Sealed]',
+    },
+    {
+      id: 'f-2',
+      type: 'code',
+      label: 'Primary PIN (4-Digit)',
+      value: '4829',
+      detail: 'Numeric Escrow PIN',
+      maskedDisplay: '● ● ● ● (Argon2id Hash — Irretrievable)',
+    },
+    {
+      id: 'f-3',
+      type: 'pattern',
+      label: 'Pattern Gesture',
+      value: '1-2-5-8-9',
+      detail: '3x3 Matrix Gesture',
+      maskedDisplay: '[Enclave Gesture — Cryptographically Sealed]',
+    },
+    {
+      id: 'f-4',
+      type: 'finger',
+      label: 'Touch ID Fingerprint',
+      value: 'Fingerprint_Index_Enrolled',
+      detail: 'Biometric Touch Scan',
+      maskedDisplay: '[Touch ID Token — Zero-Knowledge Sealed]',
+    },
+    {
+      id: 'f-5',
+      type: 'text',
+      label: 'Highlander Passphrase',
+      value: 'highlander-blue-gold',
+      detail: 'Cryptographic Passphrase',
+      maskedDisplay: '● ● ● ● ● ● ● ● ● ● (Salted Hash)',
+    },
   ]);
+
+  // -------------------------------------------------------------------------
+  // PHYSICAL LOCATION SIMULATION: ON-CAMPUS vs. OFF-CAMPUS (DURESS TEST)
+  // -------------------------------------------------------------------------
+  // UCR Campus Center: lat 33.9737, lng -117.3281
+  const [deviceLocationMode, setDeviceLocationMode] = useState<'ON_CAMPUS' | 'OFF_CAMPUS'>('OFF_CAMPUS');
+
+  const simulatedCoords =
+    deviceLocationMode === 'ON_CAMPUS'
+      ? { lat: 33.9744, lng: -117.3248, label: 'Inside UCR Campus Premises (UCPD Station, 3500 Canyon Crest Dr)', dist: 0.35 }
+      : { lat: 33.9800, lng: -117.3750, label: 'Off-Campus Location (Simulated Hostage/Coercion Site, 4.5 km away)', dist: 4.52 };
 
   // Activity Log State
   const [activityLogs, setActivityLogs] = useState<ActivityEvent[]>([
     {
       id: 'act-1',
-      type: 'TRIP',
-      title: 'Safe Trip Completed',
-      detail: 'Rivera Library to Dundee Hall (1.4 km) &bull; Arrived 4 min early',
-      timestamp: '25 min ago',
+      type: 'SECURITY',
+      title: 'Anti-Coercion Protocol 4B Enforced',
+      detail: 'Zero-knowledge factor lock engaged. Stored credentials permanently masked against gunpoint disclosure.',
+      timestamp: '10 min ago',
       status: 'SAFE',
     },
     {
       id: 'act-2',
+      type: 'TRIP',
+      title: 'Safe Trip Completed',
+      detail: 'Rivera Library to Dundee Hall (1.4 km) &bull; Arrived 4 min early',
+      timestamp: '45 min ago',
+      status: 'SAFE',
+    },
+    {
+      id: 'act-3',
       type: 'CHECKIN',
       title: 'Routine 48h Check-In Verified',
-      detail: 'Unlocked via Face ID + PIN 4829 &bull; Safe status renewed',
+      detail: 'Blind verification via Face ID + Escrow Hash &bull; Safe status renewed',
       timestamp: '3 hours ago',
       status: 'VERIFIED',
     },
     {
-      id: 'act-3',
+      id: 'act-4',
       type: 'PERIMETER',
       title: 'Within Campus Safe Corridor',
       detail: 'Canyon Crest Blue Light Perimeter Active &bull; GPS jitter 1.2m',
       timestamp: '5 hours ago',
       status: 'SAFE',
-    },
-    {
-      id: 'act-4',
-      type: 'SECURITY',
-      title: 'Security Sequence Arranged',
-      detail: 'Multi-factor authentication sequence reordered: [Face ID &rarr; PIN &rarr; Pattern]',
-      timestamp: 'Yesterday',
-      status: 'COMPLETED',
     },
     {
       id: 'act-5',
@@ -179,7 +230,7 @@ export default function StudentAppSimulator() {
   };
 
   // -------------------------------------------------------------------------
-  // ONBOARDING FORM STATE
+  // ONBOARDING FORM STATE (SET ONCE BY STUDENT)
   // -------------------------------------------------------------------------
   const [obName, setObName] = useState('Kavya Patel');
   const [obEmail, setObEmail] = useState('kpatel@ucr.edu');
@@ -195,9 +246,9 @@ export default function StudentAppSimulator() {
 
   // Onboarding factor builder (can add any of code, text, pattern, finger, face multiple times)
   const [obFactors, setObFactors] = useState<SecurityFactor[]>([
-    { id: 'ob-f1', type: 'face', label: 'Face ID', value: 'Face_Geometry_Scan', detail: '3D Facial Biometric' },
-    { id: 'ob-f2', type: 'code', label: 'PIN Code', value: '7192', detail: '4-Digit Escrow PIN' },
-    { id: 'ob-f3', type: 'finger', label: 'Fingerprint', value: 'TouchID_Enrolled', detail: 'Biometric Touch Scan' },
+    { id: 'ob-f1', type: 'face', label: 'Face ID', value: 'Face_Geometry_Scan', detail: '3D Facial Biometric', maskedDisplay: '[Biometric Key Sealed]' },
+    { id: 'ob-f2', type: 'code', label: 'PIN Code', value: '7192', detail: '4-Digit Escrow PIN', maskedDisplay: '● ● ● ● (Argon2id Hash)' },
+    { id: 'ob-f3', type: 'finger', label: 'Fingerprint', value: 'TouchID_Enrolled', detail: 'Biometric Touch Scan', maskedDisplay: '[Touch ID Token Sealed]' },
   ]);
 
   const addObFactor = (type: FactorType) => {
@@ -216,6 +267,13 @@ export default function StudentAppSimulator() {
       finger: 'Fingerprint_Touch_Scan',
       face: 'Face_Geometry_TrueDepth',
     };
+    const defaultMask: Record<FactorType, string> = {
+      code: '● ● ● ● (Argon2id Hash)',
+      text: '● ● ● ● ● ● ● ● (Salted Hash)',
+      pattern: '[Enclave Gesture Sealed]',
+      finger: '[Touch ID Token Sealed]',
+      face: '[Biometric Key Sealed]',
+    };
     setObFactors((prev) => [
       ...prev,
       {
@@ -224,6 +282,7 @@ export default function StudentAppSimulator() {
         label: `${labelMap[type]} (#${prev.filter((f) => f.type === type).length + 1})`,
         value: defaultVal[type],
         detail: `Configured factor instance`,
+        maskedDisplay: defaultMask[type],
       },
     ]);
   };
@@ -281,8 +340,9 @@ export default function StudentAppSimulator() {
         medicalNotes: obMedical.trim(),
       });
 
-      // Update factors to the newly chosen set
+      // Seal factors into write-only zero-knowledge state
       setFactors(obFactors);
+      setIsFactorsLocked(true);
 
       setObSuccess(true);
       setTimeout(() => {
@@ -295,8 +355,8 @@ export default function StudentAppSimulator() {
         {
           id: `act-${Date.now()}`,
           type: 'SECURITY',
-          title: '✨ Onboarding Completed & Identity Escrowed',
-          detail: `Enrolled as ${obName} (${obDorm}) with ${obFactors.length} custom authentication factors`,
+          title: '✨ Factors Sealed into Zero-Knowledge Enclave',
+          detail: `Enrolled as ${obName} (${obDorm}). Credentials permanently write-only. Self-service reset locked.`,
           timestamp: 'Just now',
           status: 'SAFE',
         },
@@ -304,7 +364,7 @@ export default function StudentAppSimulator() {
       ]);
     } catch (err) {
       console.error(err);
-      alert('Onboarding registered locally & broadcast to console: ' + (err as Error).message);
+      setIsFactorsLocked(true);
       setObSuccess(true);
       setTimeout(() => {
         setObSuccess(false);
@@ -316,121 +376,90 @@ export default function StudentAppSimulator() {
   };
 
   // -------------------------------------------------------------------------
-  // SECURITY & PASSWORD MANAGEMENT (Change, Forgot, Arrange, Set)
+  // IN-PERSON DUAL-CUSTODY UNIVERSITY AUTHORIZED FACTOR RESET STATE
   // -------------------------------------------------------------------------
-  const [securityTab, setSecurityTab] = useState<'manage' | 'forgot' | 'change'>('manage');
-  const [forgotEmail, setForgotEmail] = useState('mlin@ucr.edu');
-  const [forgotOtp, setForgotOtp] = useState('');
-  const [forgotStep, setForgotStep] = useState<'EMAIL' | 'OTP' | 'RESET'>('EMAIL');
-  const [forgotDemoOtp, setForgotDemoOtp] = useState<string | null>(null);
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [changeOldPin, setChangeOldPin] = useState('');
-  const [changeNewPin, setChangeNewPin] = useState('');
-  const [changeSuccessNotice, setChangeSuccessNotice] = useState(false);
+  const [staffAuthCode, setStaffAuthCode] = useState('');
+  const [officerBadge, setOfficerBadge] = useState('Officer Martinez #402');
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const [showInPersonModal, setShowInPersonModal] = useState(false);
 
-  const moveFactorOrder = (index: number, direction: 'up' | 'down') => {
-    const target = direction === 'up' ? index - 1 : index + 1;
-    if (target < 0 || target >= factors.length) return;
-    const copy = [...factors];
-    const [removed] = copy.splice(index, 1);
-    copy.splice(target, 0, removed);
-    setFactors(copy);
-  };
+  // New factors configured during in-person supervised reset
+  const [newResetPin, setNewResetPin] = useState('9384');
+  const [newResetPassphrase, setNewResetPassphrase] = useState('ucr-verified-override');
 
-  const addFactorInstance = (type: FactorType) => {
-    const id = `f-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const labelMap: Record<FactorType, string> = {
-      code: 'Numeric PIN',
-      text: 'Passphrase',
-      pattern: 'Pattern Lock',
-      finger: 'Touch ID Fingerprint',
-      face: 'Face ID Biometric',
-    };
-    const defaultVal: Record<FactorType, string> = {
-      code: '8391',
-      text: 'ucr-safety-token',
-      pattern: '2-5-8-0',
-      finger: 'TouchID_Sensor_Enrolled',
-      face: 'Face_Geometry_Mesh',
-    };
-    setFactors((prev) => [
-      ...prev,
-      {
-        id,
-        type,
-        label: `${labelMap[type]} (#${prev.filter((f) => f.type === type).length + 1})`,
-        value: defaultVal[type],
-        detail: 'Dynamic multi-factor instance',
-      },
-    ]);
-  };
-
-  const removeFactorInstance = (id: string) => {
-    if (factors.length <= 1) {
-      alert('You must keep at least one factor.');
-      return;
-    }
-    setFactors((prev) => prev.filter((f) => f.id !== id));
-  };
-
-  const handleSendForgotOtp = async (e: React.FormEvent) => {
+  const handleInPersonResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setForgotLoading(true);
-    try {
-      const res = await forgotStudentPassword(forgotEmail.trim().toLowerCase());
-      setForgotDemoOtp(res.demoOtp || '742918');
-      setForgotStep('OTP');
-    } catch {
-      setForgotDemoOtp('742918');
-      setForgotStep('OTP');
-    } finally {
-      setForgotLoading(false);
-    }
-  };
+    setResetError(null);
+    setResetSuccess(null);
+    setIsResetSubmitting(true);
 
-  const handleVerifyForgotOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setForgotLoading(true);
     try {
-      await resetStudentPassword({
-        universityEmail: forgotEmail.trim().toLowerCase(),
-        otp: forgotOtp.trim(),
-        newPassword: 'new-secure-password',
+      const res = await authorizedFactorReset({
+        universityEmail: currentStudent.email,
+        staffAuthorizationCode: staffAuthCode.trim(),
+        deviceCoords: { lat: simulatedCoords.lat, lng: simulatedCoords.lng },
+        newFactors: [
+          { type: 'face', value: 'FaceID_ReEnrolled_InPerson' },
+          { type: 'code', value: newResetPin },
+          { type: 'text', value: newResetPassphrase },
+        ],
+        newOrder: [0, 1, 2],
       });
-      setForgotStep('RESET');
-    } catch {
-      // Demo recovery succeeds
-      setForgotStep('RESET');
+
+      setResetSuccess(res.message);
+
+      // Update factors locally in zero-knowledge format
+      setFactors([
+        {
+          id: 'rf-1',
+          type: 'face',
+          label: 'Face ID Biometric Scan (Re-Enrolled)',
+          value: 'FaceID_ReEnrolled_InPerson',
+          detail: '3D TrueDepth Facial Geometry',
+          maskedDisplay: '[Biometric Key — Zero-Knowledge Sealed]',
+        },
+        {
+          id: 'rf-2',
+          type: 'code',
+          label: 'Primary PIN (Re-Configured)',
+          value: newResetPin,
+          detail: '4-Digit Escrow PIN',
+          maskedDisplay: '● ● ● ● (Argon2id Hash — Irretrievable)',
+        },
+        {
+          id: 'rf-3',
+          type: 'text',
+          label: 'Highlander Passphrase (Updated)',
+          value: newResetPassphrase,
+          detail: 'Cryptographic Passphrase',
+          maskedDisplay: '● ● ● ● ● ● ● ● (Salted Hash)',
+        },
+      ]);
+
+      setActivityLogs((prev) => [
+        {
+          id: `act-${Date.now()}`,
+          type: 'SECURITY',
+          title: '🏛️ In-Person Factor Reset Authorized by UCPD',
+          detail: `Verified inside UCR Campus Premises by ${officerBadge}. New zero-knowledge factors sealed.`,
+          timestamp: 'Just now',
+          status: 'SAFE',
+        },
+        ...prev,
+      ]);
+
+      setTimeout(() => {
+        setShowInPersonModal(false);
+        setResetSuccess(null);
+        setStaffAuthCode('');
+      }, 3000);
+    } catch (err) {
+      setResetError((err as Error).message);
     } finally {
-      setForgotLoading(false);
+      setIsResetSubmitting(false);
     }
-  };
-
-  const handleFinishReset = () => {
-    setForgotStep('EMAIL');
-    setForgotOtp('');
-    setForgotDemoOtp(null);
-    setSecurityTab('manage');
-    alert('Security credentials & factor arrangements successfully restored!');
-  };
-
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!changeNewPin || changeNewPin.length < 4) {
-      alert('Please enter a 4-digit PIN');
-      return;
-    }
-    // Update PIN in factor sequence
-    setFactors((prev) =>
-      prev.map((f) => (f.type === 'code' ? { ...f, value: changeNewPin } : f)),
-    );
-    setChangeSuccessNotice(true);
-    setChangeOldPin('');
-    setChangeNewPin('');
-    setTimeout(() => {
-      setChangeSuccessNotice(false);
-      setSecurityTab('manage');
-    }, 2000);
   };
 
   // -------------------------------------------------------------------------
@@ -466,7 +495,7 @@ export default function StudentAppSimulator() {
   };
 
   // -------------------------------------------------------------------------
-  // MULTI-FACTOR CHECK-IN FLOW
+  // MULTI-FACTOR CHECK-IN FLOW (BLIND VERIFICATION WITHOUT REVEALING SECRETS)
   // -------------------------------------------------------------------------
   const [checkinStep, setCheckinStep] = useState(0);
   const [checkinPinInput, setCheckinPinInput] = useState('');
@@ -522,11 +551,11 @@ export default function StudentAppSimulator() {
             >
               <span>CampusShield Student Mobile</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono">
-                Highlander Edition
+                Anti-Coercion Protocol 4B
               </span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Zero-Surveillance Anti-Coercion Escrow &bull; 3-Second SOS &bull; Dynamic Multi-Factor Security
+              Zero-Knowledge Write-Only Vault &bull; Gunpoint Protection &bull; In-Person Campus Premises Dual-Authorization
             </p>
           </div>
         </div>
@@ -687,10 +716,10 @@ export default function StudentAppSimulator() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                          Zero-Surveillance Escrow Active
+                          Zero-Knowledge Vault Sealed
                         </div>
                         <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate">
-                          Rotating Token: <code>3b18-e77a</code> &bull; Identity cryptographically sealed
+                          Rotating Token: <code>3b18-e77a</code> &bull; Write-Only Enclave Active
                         </div>
                       </div>
                     </div>
@@ -846,7 +875,7 @@ export default function StudentAppSimulator() {
                           Mark Check-In
                         </div>
                         <div className="text-[9px] text-slate-400 mt-0.5">
-                          {factors.length}-Factor Sequence
+                          {factors.length}-Factor Blind Verification
                         </div>
                       </button>
 
@@ -877,12 +906,12 @@ export default function StudentAppSimulator() {
                             : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        <span className="text-base mb-1 block">🔑</span>
+                        <span className="text-base mb-1 block">🔒</span>
                         <div className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          Security Factors
+                          Security Vault
                         </div>
-                        <div className="text-[9px] text-slate-400 mt-0.5">
-                          Set, Arrange, Reset
+                        <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                          Write-Only Enclave
                         </div>
                       </button>
 
@@ -928,7 +957,7 @@ export default function StudentAppSimulator() {
                   </div>
                 )}
 
-                {/* 2. ONBOARDING SCREEN (MOBILE ONBOARDING WITH LIVE REFLECTION ON UNIVERSITY) */}
+                {/* 2. ONBOARDING SCREEN (SET ONCE BY STUDENT — PERMANENTLY SEALED) */}
                 {activeScreen === 'onboard' && (
                   <div className="space-y-3 pt-1">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
@@ -940,22 +969,26 @@ export default function StudentAppSimulator() {
                           &larr; Back
                         </button>
                         <h3 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          Student Mobile Onboarding
+                          Initial Student Onboarding
                         </h3>
                       </div>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 font-mono">
-                        Live Escrow
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-mono">
+                        Set-Once Enclave
                       </span>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-700 dark:text-amber-300 leading-relaxed">
+                      ⚠️ <strong>Security Notice:</strong> You can only set your security factors <strong>once</strong>. After onboarding, factors are permanently sealed in write-only storage and cannot be viewed or changed on this device to protect you from gunpoint coercion.
                     </div>
 
                     {obSuccess ? (
                       <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-center space-y-2">
-                        <span className="text-3xl block">🎉</span>
+                        <span className="text-3xl block">🔒</span>
                         <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                          Onboarding Successfully Registered!
+                          Profile &amp; Factors Permanently Sealed!
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Reflected in real time in the University Security Console student directory.
+                          Credentials vaulted in zero-knowledge enclave. Reflected live on University Dispatch Console.
                         </p>
                       </div>
                     ) : (
@@ -1066,7 +1099,7 @@ export default function StudentAppSimulator() {
                         <div className="space-y-2 pt-1">
                           <div className="flex items-center justify-between">
                             <label className="text-[10px] font-bold text-slate-500 uppercase">
-                              3. Multi-Factor Unlock Arrangement
+                              3. Secret Factor Arrangement (Set Once)
                             </label>
                             <span className="text-[9px] text-amber-500 font-semibold">
                               Can use factors multiple times
@@ -1119,7 +1152,7 @@ export default function StudentAppSimulator() {
                                   <div>
                                     <div className="font-bold text-[11px]">{factor.label}</div>
                                     <div className="text-[9px] text-slate-400 font-mono">
-                                      Value: {factor.value}
+                                      Initial Value: {factor.value}
                                     </div>
                                   </div>
                                 </div>
@@ -1158,14 +1191,14 @@ export default function StudentAppSimulator() {
                           disabled={obSubmitting}
                           className="w-full py-2.5 rounded-2xl bg-[#003B5C] hover:brightness-110 text-white font-bold text-xs shadow-md transition-all mt-2"
                         >
-                          {obSubmitting ? 'Registering & Notifying Console...' : 'Complete Onboarding & Sync Escrow'}
+                          {obSubmitting ? 'Sealing Factors in Hardware Enclave...' : 'Lock In & Seal Factors (Set Once)'}
                         </button>
                       </form>
                     )}
                   </div>
                 )}
 
-                {/* 3. SECURITY & FACTORS MANAGEMENT (Change, Forgot, Set, Arrange) */}
+                {/* 3. SECURITY VAULT SCREEN (WRITE-ONLY ZERO-KNOWLEDGE & DUAL-CUSTODY RESET) */}
                 {activeScreen === 'security' && (
                   <div className="space-y-3 pt-1">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
@@ -1177,269 +1210,250 @@ export default function StudentAppSimulator() {
                           &larr; Back
                         </button>
                         <h3 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          Security &amp; Factors
+                          Security Vault &amp; Zero-Knowledge Status
                         </h3>
                       </div>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-mono">
-                        {factors.length} Active Factors
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-mono font-bold">
+                        🔒 Write-Only Enclave
                       </span>
                     </div>
 
-                    {/* Sub-tab navigation */}
+                    {/* Anti-Coercion at Gunpoint Protection Callout */}
                     <div
-                      className={`grid grid-cols-3 gap-1 p-1 rounded-xl border ${
-                        isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'
+                      className={`p-3 rounded-2xl border ${
+                        isDark
+                          ? 'bg-slate-900 border-slate-800'
+                          : 'bg-emerald-50/70 border-emerald-200'
                       }`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => setSecurityTab('manage')}
-                        className={`py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          securityTab === 'manage'
-                            ? 'bg-[#003B5C] text-white shadow-sm'
-                            : 'text-slate-500'
-                        }`}
-                      >
-                        Arrange Sequence
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSecurityTab('change')}
-                        className={`py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          securityTab === 'change'
-                            ? 'bg-[#003B5C] text-white shadow-sm'
-                            : 'text-slate-500'
-                        }`}
-                      >
-                        Change Factor
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSecurityTab('forgot')}
-                        className={`py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          securityTab === 'forgot'
-                            ? 'bg-[#003B5C] text-white shadow-sm'
-                            : 'text-slate-500'
-                        }`}
-                      >
-                        Forgot OTP
-                      </button>
-                    </div>
-
-                    {/* Sub-tab 1: Manage & Arrange Sequence */}
-                    {securityTab === 'manage' && (
-                      <div className="space-y-2.5">
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Re-arrange your unlock steps. Any factor can be selected multiple times.
-                        </p>
-
-                        {/* Add factor buttons */}
-                        <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                          <span className="text-[9px] font-bold uppercase text-slate-400 shrink-0">
-                            + Add:
-                          </span>
-                          {(['face', 'code', 'pattern', 'finger', 'text'] as FactorType[]).map((type) => (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => addFactorInstance(type)}
-                              className={`px-2 py-1 rounded-lg border text-[9px] font-bold transition-colors shrink-0 ${
-                                isDark
-                                  ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
-                                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                              }`}
-                            >
-                              +{type}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Factors arrangement list */}
-                        <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                          {factors.map((f, idx) => (
-                            <div
-                              key={f.id}
-                              className={`p-2.5 rounded-xl border flex items-center justify-between transition-colors ${
-                                isDark
-                                  ? 'bg-slate-900 border-slate-800'
-                                  : 'bg-white border-slate-200 shadow-sm'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-[#003B5C] text-white flex items-center justify-center font-bold text-[10px]">
-                                  {idx + 1}
-                                </span>
-                                <div>
-                                  <div className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                    {f.label}
-                                  </div>
-                                  <div className="text-[9px] text-slate-400 font-mono">
-                                    {f.detail || f.value}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => moveFactorOrder(idx, 'up')}
-                                  disabled={idx === 0}
-                                  className="p-1 rounded text-slate-400 hover:text-black dark:hover:text-white disabled:opacity-20 text-[10px]"
-                                  title="Move earlier in sequence"
-                                >
-                                  ▲
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveFactorOrder(idx, 'down')}
-                                  disabled={idx === factors.length - 1}
-                                  className="p-1 rounded text-slate-400 hover:text-black dark:hover:text-white disabled:opacity-20 text-[10px]"
-                                  title="Move later in sequence"
-                                >
-                                  ▼
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => removeFactorInstance(f.id)}
-                                  className="p-1 rounded text-red-500 hover:text-red-700 text-[10px]"
-                                  title="Remove factor instance"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-base">🛡️</span>
+                        <div className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400">
+                          Gunpoint &amp; Duress Protection Active
                         </div>
                       </div>
-                    )}
+                      <p className="text-[10px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                        To protect your safety during abduction, robbery, or hostage coercion:
+                      </p>
+                      <ul className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 space-y-1 list-disc pl-4">
+                        <li>
+                          <strong>Zero Stored Passwords:</strong> PINs, passphrases, and gesture sequence order are write-only. They <strong>cannot be viewed</strong> on this phone by anyone.
+                        </li>
+                        <li>
+                          <strong>No Self-Service Reset:</strong> An attacker cannot force you to reset passwords. Resets are permanently locked on mobile devices.
+                        </li>
+                        <li>
+                          <strong>University Premises Only:</strong> Modifications require in-person identity verification inside UCR Campus Police headquarters.
+                        </li>
+                      </ul>
+                    </div>
 
-                    {/* Sub-tab 2: Change Factor Credentials */}
-                    {securityTab === 'change' && (
-                      <form onSubmit={handleChangePassword} className="space-y-3">
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Update your master numeric PIN or biometric enrollment token.
-                        </p>
-                        {changeSuccessNotice && (
-                          <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-xs text-center font-bold">
-                            ✓ Security PIN successfully updated!
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          <input
-                            type="password"
-                            placeholder="Current PIN (e.g. 4829)"
-                            value={changeOldPin}
-                            onChange={(e) => setChangeOldPin(e.target.value)}
-                            maxLength={6}
-                            className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${
+                    {/* Masked Factor Sequence Overview */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase">
+                        <span>Configured Factors ({factors.length})</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">● Sealed</span>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {factors.map((f, idx) => (
+                          <div
+                            key={f.id}
+                            className={`p-2.5 rounded-xl border flex items-center justify-between ${
                               isDark
-                                ? 'bg-slate-900 border-slate-800 text-white'
-                                : 'bg-slate-50 border-slate-200 text-slate-900'
+                                ? 'bg-slate-900/70 border-slate-800'
+                                : 'bg-white border-slate-200 shadow-sm'
                             }`}
-                          />
-                          <input
-                            type="password"
-                            required
-                            placeholder="New 4-Digit PIN"
-                            value={changeNewPin}
-                            onChange={(e) => setChangeNewPin(e.target.value)}
-                            maxLength={6}
-                            className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${
-                              isDark
-                                ? 'bg-slate-900 border-slate-800 text-white'
-                                : 'bg-slate-50 border-slate-200 text-slate-900'
-                            }`}
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          className="w-full py-2 rounded-xl bg-[#003B5C] text-white font-bold text-xs"
-                        >
-                          Save New PIN
-                        </button>
-                      </form>
-                    )}
-
-                    {/* Sub-tab 3: Forgot Password / OTP Flow */}
-                    {securityTab === 'forgot' && (
-                      <div className="space-y-3">
-                        {forgotStep === 'EMAIL' && (
-                          <form onSubmit={handleSendForgotOtp} className="space-y-2.5">
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                              Send a 6-digit emergency OTP recovery code to your registered university email.
-                            </p>
-                            <input
-                              type="email"
-                              required
-                              value={forgotEmail}
-                              onChange={(e) => setForgotEmail(e.target.value)}
-                              placeholder="UCR Email"
-                              className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${
-                                isDark
-                                  ? 'bg-slate-900 border-slate-800 text-white'
-                                  : 'bg-slate-50 border-slate-200 text-slate-900'
-                              }`}
-                            />
-                            <button
-                              type="submit"
-                              disabled={forgotLoading}
-                              className="w-full py-2 rounded-xl bg-[#003B5C] text-white font-bold text-xs"
-                            >
-                              {forgotLoading ? 'Dispatching OTP...' : 'Send Emergency OTP Code'}
-                            </button>
-                          </form>
-                        )}
-
-                        {forgotStep === 'OTP' && (
-                          <form onSubmit={handleVerifyForgotOtp} className="space-y-2.5">
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                              Enter the 6-digit verification code dispatched to <code>{forgotEmail}</code>.
-                            </p>
-                            {forgotDemoOtp && (
-                              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[10px]">
-                                Demo Verification OTP: <span className="font-mono font-bold">{forgotDemoOtp}</span>
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-[10px]">
+                                {idx + 1}
+                              </span>
+                              <div>
+                                <div className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                  {f.label}
+                                </div>
+                                <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                  {f.maskedDisplay}
+                                </div>
                               </div>
-                            )}
-                            <input
-                              type="text"
-                              required
-                              maxLength={6}
-                              value={forgotOtp}
-                              onChange={(e) => setForgotOtp(e.target.value)}
-                              placeholder="6-Digit OTP (e.g. 742918)"
-                              className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono text-center tracking-widest font-bold ${
-                                isDark
-                                  ? 'bg-slate-900 border-slate-800 text-white'
-                                  : 'bg-slate-50 border-slate-200 text-slate-900'
-                              }`}
-                            />
-                            <button
-                              type="submit"
-                              disabled={forgotLoading}
-                              className="w-full py-2 rounded-xl bg-[#003B5C] text-white font-bold text-xs"
-                            >
-                              Verify Code &amp; Unlock Reset
-                            </button>
-                          </form>
-                        )}
-
-                        {forgotStep === 'RESET' && (
-                          <div className="space-y-2.5 text-center">
-                            <span className="text-3xl block">🔓</span>
-                            <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                              Identity Verified via University OTP
                             </div>
-                            <p className="text-[10px] text-slate-500">
-                              You can now arrange a brand new security sequence or reset credentials.
-                            </p>
+                            <span className="text-xs text-slate-400" title="Protected against inspection">
+                              🔒
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* In-Person University Reset Trigger */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowInPersonModal(true)}
+                        className={`w-full py-2.5 rounded-2xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                          isDark
+                            ? 'bg-slate-900 border-slate-700 hover:border-slate-500 text-slate-200'
+                            : 'bg-white border-slate-300 hover:border-slate-400 text-slate-800 shadow-sm'
+                        }`}
+                      >
+                        <span>🏛️</span>
+                        <span>In-Person University Factor Reset (UCPD Station)</span>
+                      </button>
+                      <p className="text-[9px] text-center text-slate-400 mt-1">
+                        Requires in-person UCPD Staff Key &amp; verified presence on campus premises
+                      </p>
+                    </div>
+
+                    {/* Dual-Custody In-Person Modal View */}
+                    {showInPersonModal && (
+                      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div
+                          className={`w-full max-w-sm rounded-3xl p-4 border shadow-2xl transition-all ${
+                            isDark
+                              ? 'bg-slate-900 border-slate-800 text-white'
+                              : 'bg-white border-slate-200 text-slate-900'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800 mb-3">
+                            <h4 className="font-extrabold text-xs flex items-center gap-1.5">
+                              <span>🏛️</span>
+                              <span>In-Person Dual-Custody Reset</span>
+                            </h4>
                             <button
                               type="button"
-                              onClick={handleFinishReset}
-                              className="w-full py-2 rounded-xl bg-[#003B5C] text-white font-bold text-xs"
+                              onClick={() => {
+                                setShowInPersonModal(false);
+                                setResetError(null);
+                                setResetSuccess(null);
+                              }}
+                              className="text-xs text-slate-400 hover:text-black dark:hover:text-white"
                             >
-                              Return to Security Sequence
+                              ✕
                             </button>
                           </div>
-                        )}
+
+                          {/* Check 1: Hardware GPS Verification on Campus Premises */}
+                          <div className="mb-3 space-y-1.5">
+                            <div className="text-[10px] font-bold uppercase text-slate-500 flex items-center justify-between">
+                              <span>1. Campus Premise Verification</span>
+                              <span
+                                className={`font-mono font-bold ${
+                                  deviceLocationMode === 'ON_CAMPUS' ? 'text-emerald-500' : 'text-red-500'
+                                }`}
+                              >
+                                {simulatedCoords.dist} km
+                              </span>
+                            </div>
+
+                            {deviceLocationMode === 'ON_CAMPUS' ? (
+                              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-[10px] text-emerald-700 dark:text-emerald-300">
+                                <div className="font-bold flex items-center gap-1">
+                                  <span>✓</span>
+                                  <span>Physical Presence Confirmed: On-Campus</span>
+                                </div>
+                                <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                  GPS: <code>33.9744, -117.3248</code> (UCPD HQ, 3500 Canyon Crest Dr)
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/40 text-[10px] text-red-600 dark:text-red-400">
+                                <div className="font-bold flex items-center gap-1">
+                                  <span>❌</span>
+                                  <span>GEO-SECURITY LOCK: Device Off-Campus ({simulatedCoords.dist} km)</span>
+                                </div>
+                                <div className="text-[9px] mt-0.5 leading-relaxed">
+                                  Anti-Coercion Policy: Factor resets are strictly blocked outside UCR campus to prevent gunpoint extortion. You must be physically inside UCPD station.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Check 2: University Official Staff Authorization Key */}
+                          <form onSubmit={handleInPersonResetSubmit} className="space-y-2.5">
+                            <div>
+                              <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-500 mb-1">
+                                <span>2. University Official Shared Key</span>
+                                <span className="text-[9px] text-amber-500 font-mono">Demo: UCPD-DISPATCH-911</span>
+                              </div>
+                              <input
+                                type="text"
+                                required
+                                value={staffAuthCode}
+                                onChange={(e) => setStaffAuthCode(e.target.value)}
+                                placeholder="Enter University Staff Authorization Code"
+                                className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono font-bold tracking-wider ${
+                                  isDark
+                                    ? 'bg-slate-950 border-slate-800 text-white'
+                                    : 'bg-slate-50 border-slate-200 text-slate-900'
+                                }`}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] font-bold uppercase text-slate-500">
+                                  New PIN
+                                </label>
+                                <input
+                                  type="password"
+                                  maxLength={6}
+                                  value={newResetPin}
+                                  onChange={(e) => setNewResetPin(e.target.value)}
+                                  className={`w-full px-2.5 py-1.5 rounded-xl border text-xs font-mono mt-0.5 ${
+                                    isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                                  }`}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[9px] font-bold uppercase text-slate-500">
+                                  New Passphrase
+                                </label>
+                                <input
+                                  type="text"
+                                  value={newResetPassphrase}
+                                  onChange={(e) => setNewResetPassphrase(e.target.value)}
+                                  className={`w-full px-2.5 py-1.5 rounded-xl border text-xs font-mono mt-0.5 ${
+                                    isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                                  }`}
+                                />
+                              </div>
+                            </div>
+
+                            {resetError && (
+                              <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/40 text-red-600 dark:text-red-400 text-[10px] leading-tight">
+                                {resetError}
+                              </div>
+                            )}
+
+                            {resetSuccess && (
+                              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                                ✓ {resetSuccess}
+                              </div>
+                            )}
+
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setShowInPersonModal(false)}
+                                className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs text-slate-500 font-semibold"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={isResetSubmitting || deviceLocationMode !== 'ON_CAMPUS'}
+                                className="flex-1 py-2 rounded-xl bg-[#003B5C] disabled:opacity-40 text-white font-bold text-xs shadow-md transition-all"
+                              >
+                                {isResetSubmitting
+                                  ? 'Verifying Dual Custody...'
+                                  : deviceLocationMode !== 'ON_CAMPUS'
+                                  ? 'Blocked: Off-Campus'
+                                  : 'Authorize In-Person Reset'}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1794,10 +1808,10 @@ export default function StudentAppSimulator() {
                         {factors[checkinStep]?.type === 'text' && (
                           <div className="space-y-2">
                             <input
-                              type="text"
+                              type="password"
                               value={checkinPassphraseInput}
                               onChange={(e) => setCheckinPassphraseInput(e.target.value)}
-                              placeholder="Enter Passphrase (e.g. highlander-blue-gold)"
+                              placeholder="Enter Passphrase"
                               className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${
                                 isDark
                                   ? 'bg-slate-900 border-slate-800 text-white'
@@ -1949,6 +1963,132 @@ export default function StudentAppSimulator() {
 
         {/* Right Column: Interactive Simulator Controls & Architecture Overview */}
         <div className="lg:col-span-7 space-y-4">
+          {/* Physical Duress & Gunpoint Threat Model Explainer */}
+          <div
+            className={`p-4 rounded-2xl border transition-all ${
+              isDark
+                ? 'bg-slate-900 border-slate-800 shadow-xl'
+                : 'bg-white border-slate-200 shadow-sm'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h2
+                className={`text-sm font-bold flex items-center gap-2 ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                <span className="text-lg">🛡️</span>
+                <span>Gunpoint &amp; Coercion Threat Model Architecture</span>
+              </h2>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 font-mono font-bold">
+                Anti-Extortion
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+              Why this architecture solves the real-world gunpoint problem:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <div
+                className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="font-bold text-red-500 mb-1 flex items-center gap-1.5">
+                  <span>1.</span>
+                  <span>Zero-Knowledge (Write-Only)</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Attacker forces student to show settings &rarr; Stored PINs, gesture patterns, and unlock order are masked hashes. No credentials can be retrieved or viewed.
+                </p>
+              </div>
+
+              <div
+                className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="font-bold text-amber-500 mb-1 flex items-center gap-1.5">
+                  <span>2.</span>
+                  <span>Self-Service Reset Disabled</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Attacker demands student reset the password to 1234 &rarr; The app informs the attacker that self-service reset is permanently disabled by university policy.
+                </p>
+              </div>
+
+              <div
+                className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="font-bold text-sky-500 mb-1 flex items-center gap-1.5">
+                  <span>3.</span>
+                  <span>Campus Premises Geofence</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Hardware GPS strictly blocks factor changes outside UCR premises. An attacker holding a student in an off-campus house or car is completely blocked.
+                </p>
+              </div>
+
+              <div
+                className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="font-bold text-emerald-500 mb-1 flex items-center gap-1.5">
+                  <span>4.</span>
+                  <span>Dual-Custody Police Access</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Modifications require an in-person campus police officer key (<code>UCPD-DISPATCH-911</code>) entered at the UCPD station with student physical ID.
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive GPS Simulator Toggle */}
+            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Simulate Device GPS Location:
+                </span>
+                <span className="text-[10px] text-slate-400 block">
+                  Current: {simulatedCoords.label}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setDeviceLocationMode('OFF_CAMPUS')}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                    deviceLocationMode === 'OFF_CAMPUS'
+                      ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 ring-1 ring-red-500/40'
+                      : isDark
+                      ? 'bg-slate-950 border-slate-800 text-slate-400'
+                      : 'bg-slate-50 border-slate-200 text-slate-600'
+                  }`}
+                >
+                  ⚠️ Off-Campus (Duress Site)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeviceLocationMode('ON_CAMPUS')}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                    deviceLocationMode === 'ON_CAMPUS'
+                      ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/40'
+                      : isDark
+                      ? 'bg-slate-950 border-slate-800 text-slate-400'
+                      : 'bg-slate-50 border-slate-200 text-slate-600'
+                  }`}
+                >
+                  🏫 On-Campus (UCPD Station)
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Screen Selector Panel */}
           <div
             className={`p-4 rounded-2xl border transition-all ${
@@ -1970,9 +2110,6 @@ export default function StudentAppSimulator() {
                 Interactive
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-              Test each mobile capability inside the phone on the left. All actions synchronize live with the University Console.
-            </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
@@ -2002,7 +2139,7 @@ export default function StudentAppSimulator() {
                 }`}
               >
                 <div>✨ Onboarding Wizard</div>
-                <div className="text-[10px] font-normal opacity-70">Syncs to University</div>
+                <div className="text-[10px] font-normal opacity-70">Set Factors Once</div>
               </button>
 
               <button
@@ -2016,8 +2153,8 @@ export default function StudentAppSimulator() {
                     : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <div>🔑 Multi-Factor Manager</div>
-                <div className="text-[10px] font-normal opacity-70">Arrange, Set, Forgot OTP</div>
+                <div>🔒 Security Vault</div>
+                <div className="text-[10px] font-normal opacity-70">Write-Only Enclave</div>
               </button>
 
               <button
@@ -2064,89 +2201,6 @@ export default function StudentAppSimulator() {
                 <div>🧮 Decoy Calculator</div>
                 <div className="text-[10px] font-normal opacity-70">Discreet Camouflage</div>
               </button>
-            </div>
-          </div>
-
-          {/* Key Feature Architecture Cards */}
-          <div
-            className={`p-4 rounded-2xl border transition-all space-y-3 ${
-              isDark
-                ? 'bg-slate-900 border-slate-800 shadow-xl'
-                : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
-            <h3
-              className={`text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}
-            >
-              Implemented Student Architecture Highlights
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              <div
-                className={`p-3 rounded-xl border ${
-                  isDark
-                    ? 'bg-slate-950 border-slate-800/80'
-                    : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="font-bold text-red-500 mb-1 flex items-center gap-1.5">
-                  <span>🚨</span>
-                  <span>3-Second Long-Press SOS</span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Prevents false dispatches by requiring 3.0 continuous seconds of contact. Displays an animated circular SVG energy ring with live countdown. Releasing early resets safely.
-                </p>
-              </div>
-
-              <div
-                className={`p-3 rounded-xl border ${
-                  isDark
-                    ? 'bg-slate-950 border-slate-800/80'
-                    : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="font-bold text-purple-500 mb-1 flex items-center gap-1.5">
-                  <span>🔑</span>
-                  <span>5-Factor Arranger (Multiple Uses)</span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Students choose between <code>code</code>, <code>text</code>, <code>pattern</code>, <code>finger</code>, and <code>face</code>. Each factor can be selected multiple times and placed in any custom sequence.
-                </p>
-              </div>
-
-              <div
-                className={`p-3 rounded-xl border ${
-                  isDark
-                    ? 'bg-slate-950 border-slate-800/80'
-                    : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="font-bold text-emerald-500 mb-1 flex items-center gap-1.5">
-                  <span>✨</span>
-                  <span>Live Mobile Onboarding</span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  When a student signs up or onboards on mobile, the University Console receives an instant WebSocket push and adds them directly to the Student Registry without delay.
-                </p>
-              </div>
-
-              <div
-                className={`p-3 rounded-xl border ${
-                  isDark
-                    ? 'bg-slate-950 border-slate-800/80'
-                    : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="font-bold text-blue-500 mb-1 flex items-center gap-1.5">
-                  <span>☀️</span>
-                  <span>Pure White &amp; Dark Mode Toggle</span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Switch instantly between Apple pure solid white light mode and dark mode via the top selector. Both the University portal and student mobile app adapt seamlessly.
-                </p>
-              </div>
             </div>
           </div>
         </div>

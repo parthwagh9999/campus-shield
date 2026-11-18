@@ -993,6 +993,19 @@ export class StudentsService {
     }
   }
 
+  findStudentByEmail(email: string): StudentListItem | undefined {
+    return mockStudentsStore.find(
+      (s) => s.universityEmail.toLowerCase() === email.trim().toLowerCase(),
+    );
+  }
+
+  setFactorsConfigured(studentId: string, configured: boolean): void {
+    const s = mockStudentsStore.find((item) => item.studentId === studentId);
+    if (s) {
+      s.factorsConfigured = configured;
+    }
+  }
+
   async bulkImport(students: CreateStudentInput[]): Promise<{ importedCount: number }> {
     let importedCount = 0;
     for (const student of students) {

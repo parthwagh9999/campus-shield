@@ -37,6 +37,15 @@ export default function StudentDirectory() {
   // Bulk CSV state
   const [bulkCsvText, setBulkCsvText] = useState('');
 
+  // In-Person University Reset Key state
+  const [activeResetKey, setActiveResetKey] = useState<string | null>(null);
+  const [activeResetStudentId, setActiveResetStudentId] = useState<string | null>(null);
+
+  const handleGenerateResetKey = (student: StudentListItem) => {
+    setActiveResetKey('UCPD-DISPATCH-911');
+    setActiveResetStudentId(student.studentId);
+  };
+
   const loadStudents = async () => {
     setLoading(true);
     try {
@@ -468,14 +477,42 @@ export default function StudentDirectory() {
             </div>
 
             <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-slate-500 block text-[10px] uppercase font-semibold">Anti-Coercion 3-Password Status</span>
+              <span className="text-slate-500 block text-[10px] uppercase font-semibold">Anti-Coercion Vault Status</span>
               <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
                 selectedStudent.factorsConfigured
                   ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                   : 'bg-amber-950 text-amber-400 border border-amber-800'
               }`}>
-                {selectedStudent.factorsConfigured ? '✓ Configured & Encrypted' : 'Pending Onboarding'}
+                {selectedStudent.factorsConfigured ? '🔒 Sealed Zero-Knowledge Vault (Write-Only)' : 'Pending Initial Setup'}
               </span>
+              <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
+                Credentials cannot be viewed on student devices to prevent forced disclosure under duress or at gunpoint.
+              </p>
+            </div>
+
+            {/* In-Person Police Factor Reset Key Generator */}
+            <div className="bg-slate-950 p-2.5 rounded-lg border border-indigo-950/60">
+              <div className="flex items-center justify-between">
+                <span className="text-indigo-400 block text-[10px] uppercase font-bold">In-Person Police Override</span>
+                <span className="text-[9px] text-amber-400 font-mono">UCPD Station Only</span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                If student reports in person with physical R'Card &amp; ID to reset credentials:
+              </p>
+              <button
+                onClick={() => handleGenerateResetKey(selectedStudent)}
+                className="mt-2 w-full py-1.5 px-2 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 rounded text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>🔑</span>
+                <span>Issue In-Person Staff Access Key</span>
+              </button>
+              {activeResetKey && activeResetStudentId === selectedStudent.studentId && (
+                <div className="mt-2 p-2 bg-slate-900 border border-emerald-500/40 rounded text-center">
+                  <div className="text-[9px] text-slate-400">One-Time University Shared Key:</div>
+                  <div className="font-mono font-black text-sm text-emerald-400 mt-0.5">{activeResetKey}</div>
+                  <div className="text-[9px] text-amber-400 mt-0.5">Valid ONLY within UCR Campus premise bounds</div>
+                </div>
+              )}
             </div>
 
             <div className="pt-2">

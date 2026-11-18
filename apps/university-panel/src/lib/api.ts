@@ -350,3 +350,30 @@ export async function resetStudentPassword(data: {
 
   return res.json();
 }
+
+export async function authorizedFactorReset(data: {
+  universityEmail: string;
+  staffAuthorizationCode: string;
+  deviceCoords: { lat: number; lng: number };
+  newFactors?: Array<{ type: string; value?: string }>;
+  newOrder?: number[];
+}): Promise<{
+  status: string;
+  message: string;
+  authorizedBy: string;
+  verifiedLocation: string;
+  resetAt: string;
+}> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/student/factors/authorized-reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Authorization reset failed' }));
+    throw new Error(err.message || err.error || 'Authorized factor reset failed');
+  }
+
+  return res.json();
+}
