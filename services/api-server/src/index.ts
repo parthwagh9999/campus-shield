@@ -70,7 +70,7 @@ export async function buildApp() {
   }));
 
   // Register route modules
-  await app.register(authRoutes, { pool, vaultService });
+  await app.register(authRoutes, { pool, vaultService, studentsService });
   await app.register(vaultRoutes, { vaultService });
   await app.register(checkinRoutes, { checkinService });
   await app.register(tripsRoutes, { tripsService });

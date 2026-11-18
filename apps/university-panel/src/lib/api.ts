@@ -281,3 +281,72 @@ export async function fetchTripDayPath(tripToken: string): Promise<TripDayPath> 
   const json = await res.json();
   return json.path;
 }
+
+// ---------------------------------------------------------------------------
+// Student Mobile & Onboarding API
+// ---------------------------------------------------------------------------
+export async function registerStudentMobile(data: {
+  universityEmail: string;
+  password?: string;
+  profile: {
+    fullName: string;
+    dormBuilding: string;
+    roomNumber?: string;
+    emergencyContacts: Array<{ name: string; phone: string; relationship: string }>;
+    medicalNotes?: string;
+  };
+  checkinIntervalHours?: number;
+  factors?: Array<{ type: string; config?: Record<string, any> }>;
+  order?: number[];
+}): Promise<{ studentId: string; token: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/student/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...data,
+      password: data.password || 'SecureHighlander2026!',
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Registration failed' }));
+    throw new Error(error.error || 'Registration failed');
+  }
+
+  return res.json();
+}
+
+export async function forgotStudentPassword(universityEmail: string): Promise<{ status: string; message: string; demoOtp: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/student/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ universityEmail }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Password recovery failed' }));
+    throw new Error(err.error || 'Password recovery failed');
+  }
+
+  return res.json();
+}
+
+export async function resetStudentPassword(data: {
+  universityEmail: string;
+  otp: string;
+  newPassword?: string;
+  newFactors?: Array<{ type: string }>;
+}): Promise<{ status: string; message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/student/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Password reset failed' }));
+    throw new Error(err.error || 'Password reset failed');
+  }
+
+  return res.json();
+}

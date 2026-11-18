@@ -65,17 +65,17 @@ export default function GeofenceManager() {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-slate-950 p-6">
+    <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-6 transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-6">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
             <span>Campus Safety Geofences & Designated Corridors</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Configure university-managed safe perimeters, Blue Light emergency corridors, and perimeter alert policies.
           </p>
         </div>
@@ -96,7 +96,7 @@ export default function GeofenceManager() {
         {geofences.map((gf) => (
           <div
             key={gf.id}
-            className="p-4 bg-slate-900 border border-slate-800 rounded-xl relative overflow-hidden flex flex-col justify-between"
+            className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl relative overflow-hidden flex flex-col justify-between shadow-sm"
           >
             {/* Category top stripe */}
             <div

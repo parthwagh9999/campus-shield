@@ -25,7 +25,7 @@ export default function SOSButton({ onTriggerSOS, size = 180 }: SOSButtonProps) 
       useNativeDriver: true,
     }).start();
 
-    // Long press 1.5 seconds to trigger SOS
+    // Long press 3.0 seconds to trigger SOS (prevents accidental triggers)
     timeoutRef.current = setTimeout(() => {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -34,7 +34,7 @@ export default function SOSButton({ onTriggerSOS, size = 180 }: SOSButtonProps) 
       }
       onTriggerSOS();
       setIsPressing(false);
-    }, 1500);
+    }, 3000);
   };
 
   const handlePressOut = () => {
@@ -59,7 +59,8 @@ export default function SOSButton({ onTriggerSOS, size = 180 }: SOSButtonProps) 
             width: size + 40,
             height: size + 40,
             borderRadius: (size + 40) / 2,
-            backgroundColor: isPressing ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.1)',
+            backgroundColor: isPressing ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.1)',
+            borderColor: isPressing ? '#ef4444' : 'rgba(239, 68, 68, 0.3)',
           },
         ]}
       />
@@ -81,7 +82,7 @@ export default function SOSButton({ onTriggerSOS, size = 180 }: SOSButtonProps) 
         >
           <Text style={styles.sosText}>SOS</Text>
           <Text style={styles.subText}>
-            {isPressing ? 'HOLD 1.5s...' : 'PRESS & HOLD'}
+            {isPressing ? 'HOLD 3.0s...' : 'HOLD 3 SECONDS'}
           </Text>
         </TouchableOpacity>
       </Animated.View>

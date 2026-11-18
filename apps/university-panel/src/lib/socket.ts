@@ -8,6 +8,7 @@ export function connectPanelSocket(
   onPing: (ping: AnonymizedTrip) => void,
   onAlert: (alert: AlertItem) => void,
   onResolved: (payload: { tripToken: string }) => void,
+  onStudentCreated?: (payload: { student: any }) => void,
 ): Socket {
   if (socket) {
     socket.disconnect();
@@ -34,6 +35,12 @@ export function connectPanelSocket(
 
   socket.on('alert:resolved', (data: { tripToken: string }) => {
     onResolved(data);
+  });
+
+  socket.on('student:created', (data: { student: any }) => {
+    if (onStudentCreated) {
+      onStudentCreated(data);
+    }
   });
 
   socket.on('disconnect', (reason) => {

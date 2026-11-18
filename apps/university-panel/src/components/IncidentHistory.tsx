@@ -253,31 +253,31 @@ export default function IncidentHistory({ alerts }: IncidentHistoryProps) {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-slate-950 p-6">
+    <div className="flex-1 flex overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-6 transition-colors">
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Compliance Banner */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between shrink-0 text-xs">
+        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between shrink-0 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-emerald-400 font-bold">🛡️ 1-Year Retention Policy Active:</span>
-            <span className="text-slate-300">
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">🛡️ 1-Year Retention Policy Active:</span>
+            <span className="text-slate-600 dark:text-slate-300">
               In accordance with Clery Act audit rules, all student emergency incidents and cryptographic unseal logs are preserved for 365 days.
             </span>
           </div>
-          <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 font-mono font-bold text-[10px]">
+          <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-mono font-bold text-[10px]">
             365-Day Retention Verified
           </span>
         </div>
 
         {/* Header with Time Range Selector & CSV Export */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 shrink-0">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4 shrink-0">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
               <span>UCR Emergency Incident Ledger & 1-Year Archive</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Historical ledger of resolved safety triggers, dispatched UCPD officers, and verified police station dispatch numbers.
             </p>
           </div>

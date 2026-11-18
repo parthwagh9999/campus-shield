@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <link
           rel="stylesheet"
@@ -20,8 +20,24 @@ export default function RootLayout({
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossOrigin=""
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var t = localStorage.getItem('cs_theme');
+                  if (t === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className="bg-slate-950 text-slate-100 antialiased h-screen overflow-hidden">
+      <body className="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-200">
         {children}
       </body>
     </html>

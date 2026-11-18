@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import SecurityMap from '../../components/Map';
 import AlertDrawer from '../../components/AlertDrawer';
 import AuditLogModal from '../../components/AuditLogModal';
@@ -27,6 +28,19 @@ export default function DashboardPage() {
   const [selectedTripToken, setSelectedTripToken] = useState<string | null>(null);
   const [activeTripPath, setActiveTripPath] = useState<TripDayPath | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+  const [mobileToast, setMobileToast] = useState<{ name: string; dorm: string } | null>(null);
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    localStorage.setItem('cs_theme', nextDark ? 'dark' : 'light');
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   const handleShowTripPath = async (tripToken: string) => {
     try {
@@ -48,6 +62,15 @@ export default function DashboardPage() {
       router.push('/');
     } else {
       setCurrentUser(session);
+    }
+
+    const saved = localStorage.getItem('cs_theme');
+    const isDarkMode = saved === 'dark';
+    setIsDark(isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
 
     const localSettings = loadSavedSettings();
@@ -107,6 +130,14 @@ export default function DashboardPage() {
       ({ tripToken }) => {
         setAlerts((prev) => prev.filter((a) => a.tripToken !== tripToken));
         setTrips((prev) => prev.filter((t) => t.tripToken !== tripToken));
+      },
+      ({ student }) => {
+        setMobileToast({
+          name: student?.fullName || student?.profile?.fullName || 'New Student',
+          dorm: student?.dormBuilding || student?.profile?.dormBuilding || 'Campus Residence',
+        });
+        setTimeout(() => setMobileToast(null), 7000);
+        loadData();
       },
     );
 

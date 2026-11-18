@@ -148,14 +148,14 @@ export default function AlertDrawer({
   };
 
   return (
-    <div className="w-96 h-full bg-slate-900 border-l border-slate-800 flex flex-col shrink-0">
+    <div className="w-96 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-          <h2 className="font-semibold text-white text-sm">Emergency Alert Queue</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-white text-sm">Emergency Alert Queue</h2>
         </div>
-        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-950/80 border border-red-500/40 text-red-400">
+        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-950/80 border border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400">
           {activeAlerts.length} Active
         </span>
       </div>

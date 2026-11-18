@@ -141,3 +141,14 @@ export function broadcastAlertResolved(tripToken: string): void {
     });
   }
 }
+
+/**
+ * Notify the panel that a new student has registered on mobile onboarding.
+ */
+export function broadcastStudentCreated(student: Record<string, unknown>): void {
+  try {
+    getPanelNamespace().to('panel').emit('student:created', { student });
+  } catch (err) {
+    log.error('broadcastStudentCreated failed', { error: (err as Error).message });
+  }
+}

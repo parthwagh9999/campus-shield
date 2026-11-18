@@ -186,19 +186,19 @@ export default function StudentDirectory() {
   const tripCount = students.filter((s) => s.status === 'ACTIVE_TRIP').length;
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-slate-950">
+    <div className="flex-1 flex overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Main Student Directory Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Control Bar */}
-        <div className="p-4 border-b border-slate-800 bg-slate-900/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <svg className="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               <span>Student Safety Registry</span>
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               {total} Enrolled
             </span>
           </div>
@@ -207,7 +207,7 @@ export default function StudentDirectory() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsBulkModalOpen(true)}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -228,51 +228,51 @@ export default function StudentDirectory() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-3 p-4 border-b border-slate-800 bg-slate-950 shrink-0">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+        <div className="grid grid-cols-4 gap-3 p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex items-center justify-between shadow-sm">
             <div>
-              <div className="text-[11px] text-slate-400 uppercase font-semibold">Total Registry</div>
-              <div className="text-xl font-bold text-white mt-0.5">{total}</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Registry</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{total}</div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">👥</div>
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400">👥</div>
           </div>
 
-          <div className="bg-slate-900 border border-emerald-950/50 rounded-xl p-3 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-950/50 rounded-xl p-3 flex items-center justify-between shadow-sm">
             <div>
-              <div className="text-[11px] text-emerald-400 uppercase font-semibold">Safe & Active</div>
-              <div className="text-xl font-bold text-emerald-400 mt-0.5">{safeCount}</div>
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold">Safe & Active</div>
+              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{safeCount}</div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/40 border border-emerald-800/40 flex items-center justify-center text-emerald-400">✓</div>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">✓</div>
           </div>
 
-          <div className="bg-slate-900 border border-amber-950/50 rounded-xl p-3 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-950/50 rounded-xl p-3 flex items-center justify-between shadow-sm">
             <div>
-              <div className="text-[11px] text-amber-400 uppercase font-semibold">Check-In Overdue</div>
-              <div className="text-xl font-bold text-amber-400 mt-0.5">{overdueCount}</div>
+              <div className="text-[11px] text-amber-600 dark:text-amber-400 uppercase font-semibold">Check-In Overdue</div>
+              <div className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">{overdueCount}</div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-amber-950/40 border border-amber-800/40 flex items-center justify-center text-amber-400">⚠️</div>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400">⚠️</div>
           </div>
 
-          <div className="bg-slate-900 border border-sky-950/50 rounded-xl p-3 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-950/50 rounded-xl p-3 flex items-center justify-between shadow-sm">
             <div>
-              <div className="text-[11px] text-sky-400 uppercase font-semibold">On Safe Trips</div>
-              <div className="text-xl font-bold text-sky-400 mt-0.5">{tripCount}</div>
+              <div className="text-[11px] text-sky-600 dark:text-sky-400 uppercase font-semibold">On Safe Trips</div>
+              <div className="text-xl font-bold text-sky-600 dark:text-sky-400 mt-0.5">{tripCount}</div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-sky-950/40 border border-sky-800/40 flex items-center justify-center text-sky-400">📍</div>
+            <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/40 flex items-center justify-center text-sky-600 dark:text-sky-400">📍</div>
           </div>
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="p-3 bg-slate-900/40 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-3 bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex-1 max-w-md relative">
             <input
               type="text"
               placeholder="Search by student name, email, or dorm..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-1.5 pl-8 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full px-3 py-1.5 pl-8 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
-            <svg className="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -286,7 +286,7 @@ export default function StudentDirectory() {
                 className={`px-2.5 py-1 rounded transition-colors ${
                   statusFilter === f
                     ? 'btn-brand-primary font-medium shadow'
-                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
                 }`}
               >
                 {f === 'ALL' ? 'All Students' : f === 'ACTIVE_TRIP' ? 'In Transit' : f}
@@ -296,14 +296,14 @@ export default function StudentDirectory() {
         </div>
 
         {/* Students Table */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-950">
           {loading ? (
             <div className="p-12 text-center text-slate-400 text-xs">Loading student registry...</div>
           ) : students.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 text-xs">No students match your filter criteria.</div>
+            <div className="p-12 text-center text-slate-400 text-xs">No students match your filter criteria.</div>
           ) : (
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0 z-10">
+            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
                 <tr>
                   <th className="py-2.5 px-4">Student</th>
                   <th className="py-2.5 px-4">Dorm / Residence</th>
@@ -313,7 +313,7 @@ export default function StudentDirectory() {
                   <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {students.map((student) => {
                   const isSelected = selectedStudent?.studentId === student.studentId;
 
@@ -323,40 +323,40 @@ export default function StudentDirectory() {
                       onClick={() => setSelectedStudent(student)}
                       className={`cursor-pointer transition-colors ${
                         isSelected
-                          ? 'bg-sky-950/40 border-l-2 border-sky-500'
-                          : 'hover:bg-slate-900/60'
+                          ? 'bg-sky-50 dark:bg-sky-950/40 border-l-2 border-sky-500'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-900/60'
                       }`}
                     >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sky-400 shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-bold text-sky-600 dark:text-sky-400 shrink-0">
                             {student.fullName[0]}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">{student.fullName}</div>
-                            <div className="text-[11px] text-slate-400 font-mono">{student.universityEmail}</div>
+                            <div className="font-semibold text-slate-900 dark:text-white">{student.fullName}</div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{student.universityEmail}</div>
                           </div>
                         </div>
                       </td>
 
-                      <td className="py-3 px-4 text-slate-300">
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
                         {student.dormBuilding ? (
                           <div>
                             <div>{student.dormBuilding}</div>
                             {student.roomNumber && (
-                              <div className="text-[11px] text-slate-400">Room {student.roomNumber}</div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400">Room {student.roomNumber}</div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-500 italic">Off-Campus</span>
+                          <span className="text-slate-400 italic">Off-Campus</span>
                         )}
                       </td>
 
                       <td className="py-3 px-4">
                         {student.emergencyContactName ? (
                           <div>
-                            <div className="text-slate-200">{student.emergencyContactName}</div>
-                            <div className="text-[11px] text-slate-400 font-mono">{student.emergencyContactPhone}</div>
+                            <div className="text-slate-800 dark:text-slate-200">{student.emergencyContactName}</div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{student.emergencyContactPhone}</div>
                           </div>
                         ) : (
                           <span className="text-amber-500/80 text-[11px]">Unregistered</span>
