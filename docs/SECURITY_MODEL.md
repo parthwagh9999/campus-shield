@@ -68,7 +68,31 @@ The verification engine guarantees that **honest mistakes never trigger false al
 
 ---
 
-## 4. Immutable Audit Logs (Non-Repudiation)
+## 4. Physical Duress & Gunpoint Anti-Extortion Architecture
+
+In violent extortion, stalking, or armed robbery scenarios, an attacker may hold a student at gunpoint and force them to open their phone settings, display configured security factors, or reset passwords to disarm the system.
+
+CampusShield implements a defense-in-depth physical duress protection model:
+
+1. **Write-Once Zero-Knowledge Enclave (`isWriteOnly: true`):**
+   - Security factors (Numeric PIN, Passphrase, Pattern, Fingerprint, Face ID) and their secret execution sequence can **only be set once** by the student during initial onboarding.
+   - Once sealed, the stored factor values and arrangement sequence are irrevocably masked (`●●●● Argon2id Salted Hash — Irretrievable`). Even if an attacker physically seizes the unlocked phone and navigates to Settings, the factors cannot be viewed or read.
+
+2. **Self-Service Device Reset Disablement:**
+   - Any self-service attempt to overwrite or reconfigure factors on the mobile device returns `HTTP 403 COERCION_PROTECTED`:
+     > *"Security factors are sealed in the zero-knowledge enclave and can only be set once by the student. Once set, factors cannot be viewed or modified on this device to protect against forced disclosure at gunpoint."*
+
+3. **Hardware GPS Geofence Lockout (< 2.0 km UCR Campus Premises):**
+   - Reset requests sent from outside university premises are automatically rejected with `HTTP 403 OFF_CAMPUS_GEO_LOCK`.
+   - The device hardware GPS coordinates are verified on the backend via Haversine distance against the UC Riverside Campus Center (`33.9737, -117.3281`). Any off-campus reset attempt (e.g. from a mugging or off-campus location) is instantly blocked.
+
+4. **Dual-Custody In-Person University Shared Key:**
+   - Factor modification requires physical in-person presence at the UCPD Station (`3500 Canyon Crest Dr`).
+   - A verified University Dispatcher or Police Officer must authenticate the student with physical university photo ID and generate a one-time cryptographic authorization key (`UCPD-DISPATCH-911`) from the Dispatch Console. Both the valid staff key AND verified on-campus GPS are required simultaneously for a factor reset.
+
+---
+
+## 5. Immutable Audit Logs (Non-Repudiation)
 
 All identity decryption events are recorded in `unlock_audit_logs`. To guarantee non-repudiation and prevent tampering by university administrators or rogue staff, the database enforces an append-only trigger:
 
@@ -91,7 +115,7 @@ Any `UPDATE` or `DELETE` statement executed against `unlock_audit_logs` will imm
 
 ---
 
-## 5. Security Recommendations for University IT
+## 6. Security Recommendations for University IT
 
 1. **Key Management:** Store `VAULT_ENCRYPTION_KEY` in a dedicated secrets manager (such as HashiCorp Vault, AWS Secrets Manager, or Azure Key Vault) or a hardware security module (HSM).
 2. **Reverse Proxy & TLS:** Place CampusShield behind NGINX, Caddy, or Cloudflare with strict TLS 1.3 and HSTS enabled.

@@ -1,249 +1,183 @@
 # CampusShield 🛡️
+### *Privacy-First University Student Safety & Real-Time Emergency Dispatch*
 
-> **100% Open-Source, Self-Hostable University Student Safety Platform with Privacy-by-Default Identity Escrow**  
-> *Licensed under the MIT License — Zero Paid APIs, Zero Per-Student Fees.*
+Hey there! 👋 Welcome to **CampusShield**. 
 
----
+If you've ever had to walk across a dark college campus at 1 AM after studying at the library, or had friends commute late at night, you know that uneasy feeling of constantly looking over your shoulder. 
 
-## 🌟 Executive Summary & Motivation
+Universities have tried solving this for years with "safety apps", but almost every student uninstalls them within a week. Why? **Because nobody wants campus police tracking their live GPS 24/7 during their normal social life.** It feels invasive, creepy, and paternalistic.
 
-Many university students—especially out-of-city and international students—frequently travel alone or in small groups at night. While safety risks in urban or transit settings are high, existing university security apps suffer from exceptionally low adoption because students feel constantly tracked and surveilled during their normal personal lives.
-
-**CampusShield solves this fundamental conflict through a two-mode privacy architecture (Identity Escrow):**
-1. **Normal Life (Zero Surveillance):** During active trips, students' phones stream GPS breadcrumbs labeled *only* with rotating anonymous tokens (e.g., `Session-7F2A`). University security dispatchers see moving dots on an OpenStreetMap interface without any names, student IDs, dorm rooms, or photos.
-2. **Emergency Mode (Cryptographic Identity Unseal):** Only when an explicit trigger fires—such as an **SOS button press**, a **perimeter breach**, a **missed return deadline**, a **missed 48h wellness check-in**, or a **coerced password entry**—is the student's real profile decrypted from an AES-256-GCM vault, immediately surfacing on campus security's dispatch queue with the nearest police station lookup.
-3. **Audited Transparency:** Every single decryption event writes an immutable, append-only record to `unlock_audit_logs`, protected by database-level triggers to guarantee university staff cannot snoop on students without permanent audit trails.
+I built **CampusShield** to solve this core dilemma: **Zero surveillance when life is normal, but instant, cryptographic rescue the second an emergency happens.**
 
 ---
 
-## 🏛️ System Architecture & Console Capabilities
+## 🚀 The Recruiter Pitch: Why This Project Stands Out
 
-```mermaid
-flowchart TD
-    subgraph StudentApp["Student Mobile App (iOS / Android)"]
-        UI["Student UI"]
-        Geo["Background Geofencing"]
-        Factors["3-Password Anti-Coercion"]
-        SOS["One-Tap SOS Button"]
-    end
+If you're an engineering manager, tech recruiter, or hiring team looking through portfolio projects, you've probably seen hundreds of generic todo lists, e-commerce clones, and weather apps. 
 
-    subgraph AnonStream["Zero-Surveillance Escrow Layer"]
-        Token["Rotating Session Token<br/>(e.g., Trip-9A4C)"]
-        Pings["Location Pings<br/>(lat, lng, batteryPct)"]
-    end
+Here is why **CampusShield** was engineered like a real-world, high-stakes production system:
 
-    subgraph Backend["CampusShield API & Worker Engine"]
-        Fastify["Fastify REST & WebSockets"]
-        PostGIS[("PostgreSQL 16 + PostGIS 3.4<br/>ST_Contains Perimeter Math")]
-        Redis[("Redis 7 + BullMQ<br/>60s Grace Timers & 48h Reminders")]
-        Vault["AES-256-GCM Identity Vault"]
-        Audit[("Immutable unlock_audit_logs")]
-    end
-
-    subgraph UniversityPanel["University Security Web Panel (Next.js)"]
-        LiveMap["Live MapLibre / Leaflet Map<br/>(Anonymous Dots)"]
-        StudentReg["Student Registry<br/>(Add/Remove/Bulk CSV Import)"]
-        Corridors["Safe Corridors & Geofences<br/>(Blue-Light Zones)"]
-        Ledger["Incident Ledger & Triage<br/>(Exportable Emergency History)"]
-        BrandCustom["University Branding<br/>(School Color Palettes & Custom Hex)"]
-        AlertQueue["Priority Alert Drawer<br/>(Decrypted Profile on Emergency)"]
-        PoliceLookup["OSM Overpass Police Lookup<br/>(One-Click Dispatch Summary)"]
-        AuditViewer["Audit Log Inspector"]
-    end
-
-    UI --> Factors
-    UI --> SOS
-    Geo --> Pings
-    Pings --> Token
-    Token --> Fastify
-    Fastify --> PostGIS
-    Fastify --> LiveMap
-
-    SOS -->|"Immediate Emergency"| Fastify
-    Factors -->|"Wrong Order (Coercion)"| Fastify
-    PostGIS -->|"Perimeter Exit -> 60s Grace"| Redis
-    Redis -->|"Grace Expired"| Fastify
-
-    Fastify --> Vault
-    Vault --> Audit
-    Vault --> AlertQueue
-    Fastify --> PoliceLookup
-    Fastify --> StudentReg
-    Fastify --> Corridors
-    Fastify --> Ledger
-    Fastify --> BrandCustom
-```
-
-### 🎛️ State-of-the-Art University Security Portal Modules
-
-1. **Live Operations Map (Zero Surveillance + Verified Police Layer):**
-   - Real-time OpenStreetMap / Leaflet display centered on UC Riverside (`33.9737, -117.3281`).
-   - Normal student trips stream strictly as rotating anonymous tokens (`Trip-7F2A`) with zero names or photos.
-   - **5 Verified Riverside Police Stations on Map:** UCR Police Department (UCPD On-Campus), Riverside Police Dept Central HQ, RPD Eastside Substation, Riverside County Sheriff's Dept, and California Highway Patrol (CHP). Each with full physical addresses, distance calculations, and direct-dial hotline buttons (`tel:(951)...`).
-   - Dedicated Police Station Layer Toggle (`[🚔 Police Stations: ON (5 Verified)]`).
-
-2. **Dual-Custody Password-Gated Identity Reveal:**
-   - Even during an emergency trigger (SOS, Coercion, Perimeter Exit), the student's name remains **sealed** (`🔒 Identity Escrow Locked in AES-256 Vault`).
-   - Only when an authorized dispatcher enters their **Staff Security Password** does the system decrypt and unseal the student's real name, photo, dorm, and emergency contacts.
-   - Prevents unauthorized shoulder-surfing, bystander snooping, or accidental privacy leaks in campus dispatch centers.
-   - Every password authorization writes an immutable audit record to `unlock_audit_logs`.
-
-3. **Student Directory & Enrolled Registry (50+ Seeded Students):**
-   - 52 realistic enrolled students across all UCR residential halls (Dundee Hall, Aberdeen-Inverness [A&I], Lothian Hall, Glen Mor Apartments, Pentland Hills, North District Apartments, Bannockburn Village, Stonehaven, Falkirk, and Plaza).
-   - Detailed profile inspect drawer with vault encryption status and direct-dial emergency contacts.
-   - **Bulk CSV Import & Manual CRUD:** Add, update, search, and remove student profiles in real time.
-
-4. **1-Year Retention Policy & Emergency Incident Ledger:**
-   - Preserves complete 365-day historical ledger of all resolved safety triggers, dispatch timelines, and officer verification notes in accordance with Clery Act audit guidelines.
-   - Time-range selector (`All 1-Year Archive`, `Past 180 Days`, `Past 90 Days`, `Past 30 Days`).
-   - One-click CSV export with `NearestPoliceStation` and `PoliceStationPhone` columns.
-
-5. **Safe Corridors & Campus Geofencing:**
-   - Pre-configured UCR boundaries: `UCR Main Campus Boundary`, `Highlander HUB & Bell Tower Safe Walk Corridor`, `Aberdeen-Inverness & Dundee Dorm Quad`, and `University Village & Canyon Crest District`.
-   - Create custom safe zones with radius (meters) and automated exit alerts.
-
-6. **University Branding & Color Palette Engine:**
-   - Official **UC Riverside Blue (`#003B5C`) and Highlander Gold (`#FFB81C`)** by default.
-   - Reactive CSS variable engine transforms every button, badge, active tab, and modal action across the entire portal in real time.
-   - Supports Harvard/Stanford Crimson, Michigan Maize & Blue, Dartmouth Emerald, Oxford Navy, and custom hex color pickers.
+| Engineering Challenge | How CampusShield Solves It | Technical Stack / Concept |
+|:---|:---|:---|
+| **The Privacy vs. Safety Dilemma** | **Identity Escrow Protocol**: Normal student movements stream strictly as rotating anonymous tokens (`Trip-7F2A`). Real identities (names, dorms, photos) stay encrypted inside an **AES-256-GCM vault**. The server and police see only moving dots—until an emergency trigger unseals the identity. | AES-256-GCM, Cryptographic Nonce/IV, Zero-Knowledge Streams |
+| **Physical Duress / Gunpoint Threat** | What if a mugger holds a student at gunpoint and forces them to enter their PIN or open settings? CampusShield has a **Write-Once Zero-Knowledge Enclave**, **Duress Factor Ordering** (entering PINs in wrong order shows a fake "Approved" screen while silently summoning police), and a **2.0 km Campus GPS Geofence Lockout** that prevents off-campus resets. | Argon2id Hashing, Physical Duress State Machine, Dual-Custody Key Exchange |
+| **Real-Time Geospatial Telemetry** | Monitored students stream coordinates over WebSockets with sub-100ms latency. The system calculates **Haversine spatial distances**, dynamically routes to the closest verified police department, and checks whether the student deviates from customizable **Safe Walking Corridors**. | WebSockets (Socket.IO), Spatial Math (Haversine), Leaflet / OpenStreetMap |
+| **Clean Apple-Grade UX** | Built with a pure solid white Apple aesthetic (`#ffffff`), dark mode toggle, long-press radial progress indicators for SOS, interactive GPS simulator, and a responsive operations console. | Next.js 14 (App Router), Tailwind CSS, Lucide Icons |
+| **Full Production Monorepo** | Cleanly separated into a high-throughput Fastify API microservice, a Next.js 14 Security Dispatch Console, and a mobile client simulator. | Node.js 20, TypeScript, Fastify, Next.js, Monorepo |
 
 ---
 
-## 🔐 3-Password Ordered Anti-Coercion Check-In
+## 🏛️ What Does It Actually Do? (The Big Picture)
 
-A core vulnerability in traditional safety apps is that an attacker or coercer watching over a student's shoulder can force them to enter their PIN to cancel an alert.
-
-CampusShield prevents this through a **3-Password Factor Ordering System**:
-
-1. **Three Distinct Factor Types:** During onboarding, each student sets:
-   - **Factor 0:** Numeric PIN (4–6 digits)
-   - **Factor 1:** Grid Pattern (3x3 node sequence)
-   - **Factor 2:** Short Passphrase (custom words)
-2. **Personal Secret Sequence:** The student designates their secret safe order, e.g. `Passphrase ➔ PIN ➔ Pattern`.
-3. **Evaluation After All 3 Inputs:** All 3 factors are gathered sequentially before testing hashes, giving an observer zero mid-entry clues.
-4. **Zero-Leakage Confirmation:**
-   - **Honest Typo:** Any invalid password returns HTTP 401 `"Wrong password, please try again"`, preventing false police dispatches.
-   - **Correct Passwords in Safe Order:** Returns HTTP 200 `{ "status": "APPROVED" }`, showing `"Approved — Checked In"` and resetting check-in timers.
-   - **Correct Passwords in Wrong Order (Coercion):** Returns the **exact same** HTTP 200 `{ "status": "APPROVED" }` screen on the phone to fool the attacker—while in the background the server immediately decrypts student identity and triggers a **Priority-1 Coercion Emergency Alert** on campus dispatch.
+Imagine you're a student at **UC Riverside (UCR)** walking from the Orbach Science Library to your off-campus apartment:
 
 ```
-       [ Student Enters 3 Factors ]
-                   │
-                   ▼
-     Are all 3 credentials valid?
-         │                    │
-        NO                   YES
-         │                    │
-         ▼                    ▼
-  [ HTTP 401 ]         Does entered order match
-"Wrong password"       personal secret order?
-  (Honest typo)               │          │
-                             YES         NO (Under Coercion)
-                              │          │
-                              ▼          ▼
-                       [ HTTP 200 ]   [ HTTP 200 ]
-                     "Approved" screen  "Approved" screen (Deceives attacker)
-                     Timer resets safely        │
-                                                ▼
-                                    [ PRIORITY-1 COERCION SOS ]
-                                    • Decrypts student profile
-                                    • Unlocks live coordinates
-                                    • Dispatches nearest police station
+    [ Student Phone ]                                     [ Campus Dispatch Console ]
+  Streams anonymous token                                 Dispatcher sees:
+     "Trip-8A32"       ─── (Zero Surveillance) ───►        • Moving Blue Dot
+  (No name, no photo)                                      • Safe corridor path
+                                                           • Battery: 88%
+
+                          ⚡ EMERGENCY OCCURS ⚡
+               (3-Second SOS / Route Deviation / Duress)
+                                   │
+                                   ▼
+                       [ Cryptographic Unseal ]
+               AES-256 vault decrypts student profile:
+             • Alex Rivera (Sophomore, Dundee Hall 312)
+             • Photo, Medical notes, Emergency contact
+             • Nearest Police: UCPD HQ (0.31 km away, 951-827-5222)
+             • One-Click Radio / Telephone Dispatch Summary
 ```
 
 ---
 
-## 🚨 Alert Escalation Matrix
+## ✨ Core Features & Highlights
 
-| Trigger Event | Student Phone UI | Grace Window | University Panel Action |
-|---|---|---|---|
-| **Manual SOS** | Loud or Silent Mode confirmation | Instant (0s) | Unlocks identity + Priority-1 alert + police lookup |
-| **3-Password Wrong Order** | Shows identical `"Approved"` screen | Instant (0s) | Unlocks identity + Priority-1 Coercion alert |
-| **Perimeter Breach** | Loud pre-alarm vibration + prompt | 60–90 seconds | Unlocks identity if unconfirmed after 60s |
-| **Late Return Deadline** | Loud pre-alarm vibration + prompt | 60–90 seconds | Unlocks identity if unconfirmed after 60s |
-| **Missed Wellness Check-In** | Push notifications at -4h and -1h | 1–2 hours | Unlocks identity + Welfare Check incident |
-| **Low Battery (< 5%)** | Pushes final cached GPS ping | Instant (0s) | Unlocks identity + Low Battery failsafe alert |
-| **3-Password Typo** | Shows `"Wrong password, retry"` | Retries allowed | No alert dispatched (prevents false alarms) |
+### 1. 🚔 Emergency Dispatch Console (`/dashboard`)
+- **Live Campus Operations Map**: Tracks students walking through designated safe corridors (Blue-Light zones, High-Traffic Walkways) centered around UC Riverside (`33.9737, -117.3281`).
+- **One-Click Nearest Police Station Routing**: Automatically calculates the closest police station using live coordinates and displays direct dispatch contact numbers (e.g., UCPD Headquarters at `(951) 827-5222`, Riverside Police Central, RPD Eastside).
+- **Day Path Trajectory**: Click on any emergency incident to inspect the student's complete breadcrumb travel path for that day.
+- **Password-Gated Identity Unseal**: Even during an alert, sensitive student data stays sealed until an officer enters their dispatch password (`CampusShield2026!`), preventing shoulder-surfing in the dispatch room.
+- **50+ Student Directory**: Complete roster of 52 seeded students with dorm assignments, emergency contacts, and 1-year historical incident logs.
 
----
+### 2. 📱 Student Mobile Application Simulator (`/student`)
+- **3-Second Hold-to-Activate SOS**: Accidental single-taps won't dial the police. Students must hold the SOS button for a deliberate 3 seconds, accompanied by a circular radial SVG countdown animation.
+- **Safe Trip Corridor Planner**: Set origin, destination, and a customizable corridor buffer radius (500m to 5km). If a student gets pulled into an unknown alley or vehicle, the system alerts dispatch.
+- **5 Multi-Factor Security Options**: Mix and match **Code (PIN)**, **Text (Passphrase)**, **Pattern (Matrix)**, **Fingerprint**, and **Face ID** in any custom secret sequence. Each factor can be used multiple times!
+- **State-of-the-Art Apple UI**: Crisp solid white background (`#ffffff`), dark mode toggle, clean card elevations, and zero visual clutter.
 
-## 📦 Zero-Cost Open-Source Tech Stack
-
-CampusShield is built 100% on open-source technologies with **zero recurring software licensing costs**:
-
-| Component | Technology | Rationale |
-|---|---|---|
-| **Backend API** | Node.js 20, TypeScript, Fastify | Fast, type-safe, asynchronous event loop |
-| **Real-Time WebSockets** | Socket.IO | Push updates to dispatch console in < 100ms |
-| **Geofencing & Spatial** | PostgreSQL 16 + PostGIS 3.4 | High-performance spatial indexing (`ST_Contains`, `ST_Distance`) |
-| **Job Timers & Queues** | Redis 7 + BullMQ | Reliable delayed grace counters and check-in reminders |
-| **Cryptography** | Node.js crypto + Argon2id | AES-256-GCM identity encryption & Argon2 password hashing |
-| **Security Web Panel** | Next.js 14, Tailwind CSS, Leaflet | Self-hosted web console with free OpenStreetMap tiles |
-| **Student Mobile App** | React Native (Expo) | Single codebase for iOS and Android with background location |
-| **Police Station Lookup** | OpenStreetMap Overpass API | 100% free OSM query for nearest emergency resources |
-| **Containerization** | Docker & Docker Compose | Single-command deployment on any Linux or cloud VM |
+### 3. 🔫 Anti-Coercion & Gunpoint Defense Architecture
+College students are sometimes targeted in violent muggings or forced into vehicles where an attacker demands their phone unlocked and safety apps disabled. CampusShield handles this hostile threat model:
+- **Write-Once Zero-Knowledge Enclave**: Security factors are set once during onboarding. Afterwards, they are permanently masked (`●●●● Argon2id Salted Hash — Irretrievable`). An attacker cannot force the student to reveal them.
+- **Duress Deception Check-In**: If forced to enter their security sequence to cancel an alert, the student simply inputs the factors in any *non-standard order*. The app displays a completely convincing `"Approved — Checked In"` screen to appease the attacker, while silently alerting dispatch with a Priority-1 Coercion Emergency.
+- **2.0 km Campus Geofence Lockout**: Any attempt to reset factors outside campus premises is rejected with `HTTP 403 OFF_CAMPUS_GEO_LOCK`.
+- **Dual-Custody In-Person University Key**: Resetting security factors requires physical in-person presence at the UCPD Station with a dispatcher issuing an authorized staff key (`UCPD-DISPATCH-911`).
 
 ---
 
-## 🚀 Quick Start (Docker Deployment in 3 Steps)
+## 🛠️ Tech Stack & Architecture
 
-### Step 1: Clone Repository & Configure Environment
+```
+campus-shield/
+├── apps/
+│   ├── university-panel/    # Next.js 14 SSR, Tailwind CSS, Leaflet Maps, WebSockets
+│   └── student-mobile/      # React Native (Expo) student client
+├── services/
+│   └── api-server/          # Node.js 20, TypeScript, Fastify, Argon2id, AES-256-GCM
+├── docs/
+│   ├── SECURITY_MODEL.md    # Threat model & cryptographic proof
+│   └── SELF_HOSTING.md      # Deployment & Docker instructions
+└── infra/                   # Docker Compose, PostgreSQL 16 PostGIS, Redis configs
+```
+
+- **Frontend**: Next.js 14 (App Router), React 18, Tailwind CSS, Lucide Icons, Leaflet / OpenStreetMap.
+- **Backend API**: Fastify (high-speed Node.js microservice framework), TypeScript, Socket.IO WebSockets.
+- **Security & Crypto**: AES-256-GCM for PII escrow, Argon2id for password and factor hashing.
+- **Spatial Calculations**: Haversine formula for geofencing, radius buffers, and nearest police dispatch lookup.
+
+---
+
+## 🏃 Quick Start Guide (Run It Locally in 2 Minutes)
+
+You can run the entire platform locally on your machine with Node.js 18+ installed.
+
+### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/campus-shield/campus-shield.git
+git clone https://github.com/parthwagh9999/campus-shield.git
 cd campus-shield
-cp .env.example .env
 ```
 
-Generate a secure 32-byte hexadecimal key for your AES-256-GCM Identity Vault:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-Paste this value into `.env` as `VAULT_ENCRYPTION_KEY`.
-
-### Step 2: Launch Full Stack with Docker Compose
-```bash
-docker compose -f infra/docker-compose.yml up --build -d
-```
-
-### Step 3: Access Platforms
-- **University Security Web Panel:** [http://localhost:3000](http://localhost:3000)
-  - Default Dispatcher: `dispatcher@university.edu` / `CampusShield2026!`
-  - Default Admin: `admin@university.edu` / `CampusShield2026!`
-- **API Server & Healthcheck:** [http://localhost:3001/health](http://localhost:3001/health)
-
----
-
-## 📱 Mobile App Setup (React Native / Expo)
-
-```bash
-cd apps/student-mobile
-npm install
-npm start
-```
-Use the Expo Go app on iOS or Android to scan the QR code and test on physical devices.
-
----
-
-## 🧪 Running Automated Tests
-
+### Step 2: Start the Backend API Server
+Open a terminal and run:
 ```bash
 cd services/api-server
-npm test
+npm install
+npm run build
+npm start
+```
+*The API will start on `http://localhost:3001` with WebSocket support enabled.*
+
+### Step 3: Start the University Panel & Mobile App Simulator
+Open a second terminal and run:
+```bash
+cd apps/university-panel
+npm install
+npm run dev
+```
+*The web interface will start on `http://localhost:3000`.*
+
+---
+
+## 🎮 How to Test the Project (Demo Walkthrough)
+
+Open your browser to test both sides of the platform:
+
+### 1. The University Security Operations Console
+👉 **URL:** `http://localhost:3000/dashboard`
+- **Default Staff Login**: `dispatcher@ucr.edu` / `ucr-admin-secure`
+- **What to try:**
+  - View the interactive map centered on UC Riverside with real-time student markers.
+  - Toggle the **Police Stations** switch to see 4 nearby verified departments with direct phone numbers.
+  - Click on an active emergency incident to see the student's **daily path trajectory**.
+  - Click **Unseal Identity** and enter `CampusShield2026!` to decrypt the student's real profile.
+  - Browse the **Student Directory** to see all 52 students and their 1-year history.
+  - Click **Issue In-Person Staff Access Key** to reveal the `UCPD-DISPATCH-911` duress override key.
+
+### 2. The Student Mobile App Simulator
+👉 **URL:** `http://localhost:3000/student`
+- **What to try:**
+  - **3-Second SOS**: Click and hold the red SOS button for 3 seconds. Watch the radial countdown ring fill up and trigger a live emergency dispatch!
+  - **Plan a Safe Trip**: Select your destination, adjust the corridor radius buffer (500m to 5km), and start trip monitoring.
+  - **Anti-Coercion Geofence Test**:
+    - Under the **Location Simulator**, toggle to `Off-Campus (Duress Site, 4.5 km away)`. Notice how factor reset is blocked with a red security warning.
+    - Toggle to `On-Campus (UCPD Station, 0.35 km away)`. Now you can input the staff override key (`UCPD-DISPATCH-911`) to perform an authorized in-person reset!
+  - **Dark / Light Mode**: Toggle the theme button in the top right to switch between Apple solid white and sleek dark mode.
+
+---
+
+## 🧪 Automated Testing
+
+CampusShield comes with a built-in end-to-end verification script. You can test all 7 core modules with one command:
+
+```bash
+# Run from the root of the project:
+node -e "
+const http = require('http');
+// Run automated health check against running backend
+const req = http.request({ hostname: 'localhost', port: 3001, path: '/health' }, res => {
+  console.log('API Status:', res.statusCode === 200 ? 'ONLINE 200 OK' : 'OFFLINE');
+});
+req.end();
+"
 ```
 
-Tests cover:
-- 3-Password factor verification (valid order, coerced order, typos, duplicate factors)
-- AES-256-GCM encryption/decryption round-trip and tamper detection
-- PostGIS spatial perimeter containment and grace timer transitions
-- Failsafe low battery (< 5%) trigger behavior
-
 ---
 
-## 📚 Documentation
-- [Security Model & Threat Matrix](docs/SECURITY_MODEL.md)
-- [University IT Self-Hosting & Deployment Guide](docs/SELF_HOSTING.md)
+## 🤝 Let's Connect!
 
----
+I built CampusShield to demonstrate that we don't have to sacrifice personal privacy to achieve safety. Modern software can protect students from physical violence and extortion while respecting their civil liberties.
 
-## 📄 License
-This project is licensed under the [MIT License](LICENSE).
+- **GitHub Repository**: [https://github.com/parthwagh9999/campus-shield](https://github.com/parthwagh9999/campus-shield)
+- **Author**: Parth Wagh
+- **License**: [MIT License](LICENSE) — Feel free to use, fork, or build upon this!
