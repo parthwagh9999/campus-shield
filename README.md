@@ -11,11 +11,9 @@ I built **CampusShield** to solve this core dilemma: **Zero surveillance when li
 
 ---
 
-## 🚀 The Recruiter Pitch: Why This Project Stands Out
+## 💡 Key Engineering Highlights & Design Decisions
 
-If you're an engineering manager, tech recruiter, or hiring team looking through portfolio projects, you've probably seen hundreds of generic todo lists, e-commerce clones, and weather apps. 
-
-Here is why **CampusShield** was engineered like a real-world, high-stakes production system:
+Building a reliable real-time safety network requires solving several difficult engineering and privacy problems at once:
 
 | Engineering Challenge | How CampusShield Solves It | Technical Stack / Concept |
 |:---|:---|:---|
